@@ -1,0 +1,86 @@
+{
+  "users": [
+    {
+      "id": "local-user",
+      "gender": "male",
+      "age": 33,
+      "heightCm": 169,
+      "weightKg": 71,
+      "activityLevel": "light",
+      "goalType": "lose",
+      "createdAt": "2026-02-05T14:00:40.306Z",
+      "updatedAt": "2026-02-05T14:24:04.670Z",
+      "dateOfBirth": "1992-11-17",
+      "goalWeightKg": 65,
+      "startDate": "2026-02-05"
+    }
+  ],
+  "foodLogs": [
+    {
+      "userId": "local-user",
+      "date": "2026-02-05",
+      "foodName": "ไข่ต้ม",
+      "calories": 78,
+      "protein": 6.3,
+      "fat": 5.3,
+      "carbs": 0.6,
+      "id": "1770302536621-c243144a461f3",
+      "createdAt": "2026-02-05T14:42:16.621Z"
+    },
+    {
+      "userId": "local-user",
+      "date": "2026-02-05",
+      "foodName": "ไข่ต้ม 10 ฟอง",
+      "calories": 780,
+      "protein": 63,
+      "fat": 53,
+      "carbs": 6,
+      "id": "1770302562526-3a130b1f27e48",
+      "createdAt": "2026-02-05T14:42:42.526Z"
+    },
+    {
+      "userId": "local-user",
+      "date": "2026-02-06",
+      "foodName": "Lactasoy Soymilk Unsweetened",
+      "calories": 130,
+      "protein": 9,
+      "fat": 7,
+      "carbs": 7.75,
+      "id": "1770392883258-93dfeb201b5f6",
+      "createdAt": "2026-02-06T15:48:03.258Z"
+    }
+  ],
+  "weightLogs": [
+    {
+      "userId": "local-user",
+      "date": "2026-02-05",
+      "weightKg": 70,
+      "id": "1770300113804-cddca88b40a79",
+      "createdAt": "2026-02-05T14:01:53.804Z"
+    },
+    {
+      "userId": "local-user",
+      "date": "2026-02-06",
+      "weightKg": 70,
+      "id": "1770395090270-827d5c736d91d",
+      "createdAt": "2026-02-06T16:24:50.270Z"
+    },
+    {
+      "userId": "local-user",
+      "date": "2026-02-07",
+      "weightKg": 72,
+      "id": "1770397828143-c644b61d157a1",
+      "createdAt": "2026-02-06T17:10:28.143Z"
+    }
+  ],
+  "exerciseLogs": [
+    {
+      "userId": "local-user",
+      "date": "2026-02-06",
+      "name": "คาดิโอ 30 นาที",
+      "caloriesBurned": 240,
+      "id": "1770394475951-061dd428a1aa",
+      "createdAt": "2026-02-06T16:14:35.951Z"
+    }
+  ]
+}
