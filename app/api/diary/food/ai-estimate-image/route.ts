@@ -53,6 +53,16 @@ export async function POST(request: Request) {
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e ?? 'ไม่สามารถเรียก AI ได้');
 
+    if (msg.includes('API_KEY_INVALID') || msg.includes('API key not valid') || msg.includes('INVALID_ARGUMENT')) {
+      return NextResponse.json(
+        {
+          error:
+            'API key ของ Gemini ใช้งานไม่ได้ กรุณาตรวจสอบค่า GEMINI_API_KEY ใน Environment Variables (Vercel/เครื่อง) และเปิดใช้งาน Google AI Studio/Generative Language API ให้ถูกต้อง',
+        },
+        { status: 400 },
+      );
+    }
+
     // Handle quota/rate limit gracefully.
     if (msg.includes('Gemini error: 429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('exceeded your current quota')) {
       const retryMatch = msg.match(/retry in\s+([0-9]+(?:\.[0-9]+)?)s/i) ?? msg.match(/"retryDelay"\s*:\s*"(\d+)s"/i);

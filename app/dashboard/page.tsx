@@ -3,11 +3,13 @@ import { redirect } from 'next/navigation';
 
 import { Card } from '@/components/ui';
 import { calculateBmr, calculateDailyCalorieTarget, calculateTdee } from '@/lib/calculations/metabolism';
+import { listFoodLogsByDate } from '@/lib/services/foodService';
 import { getUserProfile } from '@/lib/services/userService';
 import { listWeightLogs } from '@/lib/services/weightService';
-import { readLocalDb, todayIsoDate } from '@/db/local/store';
+import { todayIsoDate } from '@/db/local/store';
 import { Sparkline } from '@/components/sparkline';
 import { getUserIdOrRedirect } from '@/lib/supabase/auth';
+import type { IsoDateString } from '@/types/domain';
 
 const addDays = (iso: string, days: number): string => {
   const parts = iso.split('-');
@@ -53,8 +55,10 @@ export default async function DashboardPage(props: { searchParams?: { range?: st
   const rangeParam = props.searchParams?.range;
   const range: '7' | '30' | 'all' = rangeParam === '30' ? '30' : rangeParam === 'all' ? 'all' : '7';
 
-  const db = await readLocalDb();
-  const userFood = db.foodLogs.filter((l) => l.userId === profile.id);
+  const pickDates = (count: number) =>
+    Array.from({ length: count }).map((_, i) => addDays(date, i - (count - 1)));
+  const rangeDates = range === '7' ? pickDates(7) : range === '30' ? pickDates(30) : null;
+
   const totalsByDate = new Map<
     string,
     {
@@ -67,31 +71,30 @@ export default async function DashboardPage(props: { searchParams?: { range?: st
     }
   >();
 
-  for (const l of userFood) {
-    const prev = totalsByDate.get(l.date) ?? {
-      date: l.date,
-      calories: 0,
-      proteinKcal: 0,
-      carbsKcal: 0,
-      fatKcal: 0,
-      macroKcal: 0,
-    };
-    const proteinKcal = l.protein * 4;
-    const carbsKcal = l.carbs * 4;
-    const fatKcal = l.fat * 9;
-    const next = {
-      date: l.date,
-      calories: prev.calories + l.calories,
-      proteinKcal: prev.proteinKcal + proteinKcal,
-      carbsKcal: prev.carbsKcal + carbsKcal,
-      fatKcal: prev.fatKcal + fatKcal,
-      macroKcal: prev.macroKcal + (proteinKcal + carbsKcal + fatKcal),
-    };
-    totalsByDate.set(l.date, next);
-  }
+  const datesToFetch = rangeDates ?? [date];
+  await Promise.all(
+    datesToFetch.map(async (d) => {
+      const logs = await listFoodLogsByDate({ userId: profile.id, date: d as IsoDateString });
+      const proteinG = logs.reduce((s, l) => s + l.protein, 0);
+      const fatG = logs.reduce((s, l) => s + l.fat, 0);
+      const carbsG = logs.reduce((s, l) => s + l.carbs, 0);
+      const calories = logs.reduce((s, l) => s + l.calories, 0);
 
-  const pickDates = (count: number) => Array.from({ length: count }).map((_, i) => addDays(date, i - (count - 1)));
-  const rangeDates = range === '7' ? pickDates(7) : range === '30' ? pickDates(30) : null;
+      const proteinKcal = proteinG * 4;
+      const carbsKcal = carbsG * 4;
+      const fatKcal = fatG * 9;
+      const macroKcal = proteinKcal + carbsKcal + fatKcal;
+
+      totalsByDate.set(d, {
+        date: d,
+        calories,
+        proteinKcal,
+        carbsKcal,
+        fatKcal,
+        macroKcal,
+      });
+    }),
+  );
 
   const foodByDay = (rangeDates
     ? rangeDates.map((d) => totalsByDate.get(d) ?? { date: d, calories: 0, proteinKcal: 0, carbsKcal: 0, fatKcal: 0, macroKcal: 0 })
