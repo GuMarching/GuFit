@@ -1,6 +1,19 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
-export default function HomePage() {
+import { isSupabaseEnabled } from '@/lib/supabase/client';
+import { getUserIdOrRedirect } from '@/lib/supabase/auth';
+
+export default async function HomePage() {
+  if (isSupabaseEnabled()) {
+    try {
+      await getUserIdOrRedirect();
+      redirect('/dashboard');
+    } catch {
+      redirect('/login');
+    }
+  }
+
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold tracking-tight">แอพนับแคลอรี่</h1>
