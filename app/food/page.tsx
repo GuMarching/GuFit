@@ -1,13 +1,16 @@
 import { redirect } from 'next/navigation';
 
 import { Card, Field, Input, Button, DangerButton } from '@/components/ui';
-import { DEFAULT_USER_ID } from '@/lib/constants/defaults';
 import { addFoodLog, deleteFoodLog, listFoodLogsByDate } from '@/lib/services/foodService';
 import { getUserProfile } from '@/lib/services/userService';
+import { getUserIdOrRedirect } from '@/lib/supabase/auth';
 import { todayIsoDate } from '@/db/local/store';
 
+export const dynamic = 'force-dynamic';
+
 export default async function FoodPage() {
-  const profile = await getUserProfile(DEFAULT_USER_ID);
+  const userId = await getUserIdOrRedirect();
+  const profile = await getUserProfile(userId);
   if (!profile) redirect('/profile');
 
   const date = todayIsoDate();

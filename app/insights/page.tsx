@@ -1,13 +1,15 @@
 import { redirect } from 'next/navigation';
 
 import { Card, StatRow } from '@/components/ui';
-import { DEFAULT_USER_ID } from '@/lib/constants/defaults';
 import { getUserProfile } from '@/lib/services/userService';
 import { listFoodLogsByDate } from '@/lib/services/foodService';
 import { listWeightLogs } from '@/lib/services/weightService';
 import { todayIsoDate } from '@/db/local/store';
 import { Sparkline } from '@/components/sparkline';
+import { getUserIdOrRedirect } from '@/lib/supabase/auth';
 import type { IsoDateString } from '@/types/domain';
+
+export const dynamic = 'force-dynamic';
 
 const addDays = (iso: string, days: number): string => {
   const parts = iso.split('-');
@@ -35,7 +37,8 @@ const TH_WEEKDAYS_SHORT = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
 export default async function InsightsPage() {
-  const profile = await getUserProfile(DEFAULT_USER_ID);
+  const userId = await getUserIdOrRedirect();
+  const profile = await getUserProfile(userId);
   if (!profile) redirect('/profile');
 
   const today = todayIsoDate();
