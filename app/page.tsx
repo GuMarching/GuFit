@@ -1,17 +1,19 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 
 import { isSupabaseEnabled } from '@/lib/supabase/client';
-import { getUserIdOrRedirect } from '@/lib/supabase/auth';
+import { createSupabaseServerClientReadonly } from '@/lib/supabase/server';
 
 export default async function HomePage() {
   if (isSupabaseEnabled()) {
-    try {
-      await getUserIdOrRedirect();
-      redirect('/dashboard');
-    } catch {
-      redirect('/login');
-    }
+    const cookieStore = await cookies();
+    const sb = createSupabaseServerClientReadonly({
+      getAll: () => cookieStore.getAll().map((c) => ({ name: c.name, value: c.value })),
+    });
+
+    const { data } = await sb.auth.getUser();
+    redirect(data.user ? '/dashboard' : '/login');
   }
 
   return (
