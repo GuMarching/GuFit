@@ -120,6 +120,24 @@ export const supabaseUserRepository: UserRepository = {
 
   async upsert(profile) {
     const sb = await getSupabaseClient();
+    const fallback = (): UserProfile => {
+      const now = new Date().toISOString();
+      return {
+        id: profile.id,
+        gender: profile.gender,
+        age: profile.age,
+        dateOfBirth: profile.dateOfBirth,
+        heightCm: profile.heightCm,
+        weightKg: profile.weightKg,
+        goalWeightKg: profile.goalWeightKg,
+        activityLevel: profile.activityLevel,
+        goalType: profile.goalType,
+        startDate: profile.startDate,
+        createdAt: now,
+        updatedAt: now,
+      };
+    };
+
     const payload = {
       id: profile.id,
       gender: profile.gender,
@@ -133,9 +151,20 @@ export const supabaseUserRepository: UserRepository = {
       start_date: profile.startDate ?? null,
     };
 
-    const { data, error } = await sb.from('profiles').upsert(payload).select('*').single();
+    const { error } = await sb.from('profiles').upsert(payload);
     if (error) throw new Error(error.message);
-    return mapProfile(data);
+
+    const { data: after, error: readError } = await sb
+      .from('profiles')
+      .select('*')
+      .eq('id', profile.id)
+      .maybeSingle();
+
+    if (readError) {
+      return fallback();
+    }
+
+    return after ? mapProfile(after) : fallback();
   },
 };
 
