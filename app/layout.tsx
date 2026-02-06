@@ -6,8 +6,8 @@ import Link from 'next/link';
 import { BottomNav } from '@/components/BottomNav';
 
 export const metadata = {
-  title: 'GuFit - แอพนับแคลอรี่ (ออฟไลน์)',
-  description: 'ระบบติดตามแคลอรี่และลดน้ำหนักแบบ local-first (ออฟไลน์) พร้อมต่อ Supabase ในอนาคต',
+  title: 'GuFit - แอพนับแคลอรี่',
+  description: 'ติดตามแคลอรี่ น้ำหนัก และกิจกรรม พร้อมระบบล็อกอิน',
 };
 
 export default function RootLayout(props: { children: ReactNode }) {

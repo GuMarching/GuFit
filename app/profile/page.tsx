@@ -1,10 +1,13 @@
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 
 import { Card, Field, Input, Select, Button, DangerButton } from '@/components/ui';
 import { getUserProfile, saveUserProfile } from '@/lib/services/userService';
 import type { ActivityLevel, Gender, GoalType, IsoDateString } from '@/types/domain';
 import { resetLocalDb, todayIsoDate } from '@/db/local/store';
 import { getUserIdOrRedirect } from '@/lib/supabase/auth';
+import { isSupabaseEnabled } from '@/lib/supabase/client';
+import { createSupabaseServerClientReadonly } from '@/lib/supabase/server';
 
 export default async function ProfilePage() {
   const userId = await getUserIdOrRedirect();
@@ -66,7 +69,19 @@ export default async function ProfilePage() {
       redirect('/profile');
     }
 
-    await resetLocalDb();
+    if (isSupabaseEnabled()) {
+      const cookieStore = await cookies();
+      const sb = createSupabaseServerClientReadonly({
+        getAll: () => cookieStore.getAll().map((c) => ({ name: c.name, value: c.value })),
+      });
+
+      await sb.from('food_logs').delete().eq('user_id', userId);
+      await sb.from('exercise_logs').delete().eq('user_id', userId);
+      await sb.from('weight_logs').delete().eq('user_id', userId);
+      await sb.from('profiles').delete().eq('id', userId);
+    } else {
+      await resetLocalDb();
+    }
     redirect('/profile');
   };
 
@@ -74,7 +89,7 @@ export default async function ProfilePage() {
     <div className="space-y-4">
       <h1 className="text-xl font-semibold tracking-tight">โปรไฟล์</h1>
 
-      <Card title="ข้อมูลส่วนตัว (ออฟไลน์)">
+      <Card title="ข้อมูลส่วนตัว">
         <form action={upsertProfile} className="grid gap-4 md:grid-cols-2">
           <Field label="เพศ">
             <Select name="gender" defaultValue={profile?.gender ?? 'male'} required>
@@ -169,7 +184,7 @@ export default async function ProfilePage() {
       <Card title="รีเซ็ตข้อมูลทั้งหมด">
         <form action={resetAll} className="space-y-3">
           <div className="text-sm text-gray-700">
-            การรีเซ็ตจะล้างข้อมูลทั้งหมดในเครื่องนี้ (อาหาร, กิจกรรม, น้ำหนัก, โปรไฟล์) และไม่สามารถกู้คืนได้
+            การรีเซ็ตจะล้างข้อมูลทั้งหมด (อาหาร, กิจกรรม, น้ำหนัก, โปรไฟล์) และไม่สามารถกู้คืนได้
           </div>
           <Field label="พิมพ์ RESET เพื่อยืนยัน">
             <Input name="confirmReset" placeholder="RESET" />

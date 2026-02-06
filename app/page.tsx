@@ -3,9 +3,9 @@ import Link from 'next/link';
 export default function HomePage() {
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold tracking-tight">แอพนับแคลอรี่ (ออฟไลน์)</h1>
+      <h1 className="text-xl font-semibold tracking-tight">แอพนับแคลอรี่</h1>
       <p className="text-sm text-gray-700">
-        ระบบ local-first สำหรับติดตามแคลอรี่และน้ำหนัก (รองรับการต่อ Supabase ในอนาคต)
+        ติดตามแคลอรี่ น้ำหนัก และกิจกรรม พร้อมระบบล็อกอิน
       </p>
       <div className="flex gap-3">
         <Link href="/profile" className="rounded bg-gray-900 px-4 py-2 text-white">

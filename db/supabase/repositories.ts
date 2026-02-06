@@ -1,3 +1,5 @@
+import 'server-only';
+
 import type {
   ExerciseLog,
   FoodLog,
@@ -11,7 +13,11 @@ import type {
   UserRepository,
   WeightLogRepository,
 } from '@/lib/services/repositories';
-import { supabase } from '@/lib/supabase/client';
+import { createClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
+
+import { readSupabaseEnv } from '@/lib/supabase/client';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 type JsonRecord = Record<string, unknown>;
 
@@ -25,6 +31,27 @@ const safeNumber = (v: unknown): number => {
   if (typeof v === 'number' && Number.isFinite(v)) return v;
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
+};
+
+const getSupabaseClient = async () => {
+  try {
+    const cookieStore = await cookies();
+    return createSupabaseServerClient({
+      getAll: () => cookieStore.getAll().map((c) => ({ name: c.name, value: c.value })),
+      setAll: (all) => {
+        all.forEach((c) => cookieStore.set(c.name, c.value, c.options));
+      },
+    });
+  } catch {
+    const env = readSupabaseEnv();
+    if (!env) {
+      throw new Error(
+        'Supabase env not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY',
+      );
+    }
+
+    return createClient(env.url, env.anonKey);
+  }
 };
 
 const mapProfile = (row: unknown): UserProfile => {
@@ -85,14 +112,14 @@ const mapWeightLog = (row: unknown): WeightLog => {
 
 export const supabaseUserRepository: UserRepository = {
   async getById(id) {
-    const sb = supabase();
+    const sb = await getSupabaseClient();
     const { data, error } = await sb.from('profiles').select('*').eq('id', id).maybeSingle();
     if (error) throw new Error(error.message);
     return data ? mapProfile(data) : null;
   },
 
   async upsert(profile) {
-    const sb = supabase();
+    const sb = await getSupabaseClient();
     const payload = {
       id: profile.id,
       gender: profile.gender,
@@ -114,7 +141,7 @@ export const supabaseUserRepository: UserRepository = {
 
 export const supabaseFoodLogRepository: FoodLogRepository = {
   async listByDate({ userId, date }) {
-    const sb = supabase();
+    const sb = await getSupabaseClient();
     const { data, error } = await sb
       .from('food_logs')
       .select('*')
@@ -126,7 +153,7 @@ export const supabaseFoodLogRepository: FoodLogRepository = {
   },
 
   async create(input) {
-    const sb = supabase();
+    const sb = await getSupabaseClient();
     const payload = {
       user_id: input.userId,
       date: input.date,
@@ -142,7 +169,7 @@ export const supabaseFoodLogRepository: FoodLogRepository = {
   },
 
   async updateById(input) {
-    const sb = supabase();
+    const sb = await getSupabaseClient();
     const payload = {
       food_name: input.foodName,
       calories: input.calories,
@@ -162,7 +189,7 @@ export const supabaseFoodLogRepository: FoodLogRepository = {
   },
 
   async deleteById({ userId, id }) {
-    const sb = supabase();
+    const sb = await getSupabaseClient();
     const { error } = await sb.from('food_logs').delete().eq('id', id).eq('user_id', userId);
     if (error) throw new Error(error.message);
   },
@@ -170,7 +197,7 @@ export const supabaseFoodLogRepository: FoodLogRepository = {
 
 export const supabaseExerciseLogRepository: ExerciseLogRepository = {
   async listByDate({ userId, date }) {
-    const sb = supabase();
+    const sb = await getSupabaseClient();
     const { data, error } = await sb
       .from('exercise_logs')
       .select('*')
@@ -182,7 +209,7 @@ export const supabaseExerciseLogRepository: ExerciseLogRepository = {
   },
 
   async create(input) {
-    const sb = supabase();
+    const sb = await getSupabaseClient();
     const payload = {
       user_id: input.userId,
       date: input.date,
@@ -195,7 +222,7 @@ export const supabaseExerciseLogRepository: ExerciseLogRepository = {
   },
 
   async updateById(input) {
-    const sb = supabase();
+    const sb = await getSupabaseClient();
     const payload = {
       name: input.name,
       calories_burned: input.caloriesBurned,
@@ -212,7 +239,7 @@ export const supabaseExerciseLogRepository: ExerciseLogRepository = {
   },
 
   async deleteById({ userId, id }) {
-    const sb = supabase();
+    const sb = await getSupabaseClient();
     const { error } = await sb.from('exercise_logs').delete().eq('id', id).eq('user_id', userId);
     if (error) throw new Error(error.message);
   },
@@ -220,7 +247,7 @@ export const supabaseExerciseLogRepository: ExerciseLogRepository = {
 
 export const supabaseWeightLogRepository: WeightLogRepository = {
   async list({ userId }) {
-    const sb = supabase();
+    const sb = await getSupabaseClient();
     const { data, error } = await sb
       .from('weight_logs')
       .select('*')
@@ -231,7 +258,7 @@ export const supabaseWeightLogRepository: WeightLogRepository = {
   },
 
   async upsertForDate(input) {
-    const sb = supabase();
+    const sb = await getSupabaseClient();
     const payload = {
       user_id: input.userId,
       date: input.date,
