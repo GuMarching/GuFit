@@ -13,19 +13,40 @@ export type LocalDb = {
 const dbFilePath = (): string => path.join(process.cwd(), 'db', 'local', 'data.json');
 
 export const readLocalDb = async (): Promise<LocalDb> => {
-  const raw = await fs.readFile(dbFilePath(), 'utf8');
-  const parsed = JSON.parse(raw) as Partial<LocalDb>;
-  return {
-    users: parsed.users ?? [],
-    foodLogs: parsed.foodLogs ?? [],
-    weightLogs: parsed.weightLogs ?? [],
-    exerciseLogs: parsed.exerciseLogs ?? [],
-  };
+  try {
+    const raw = await fs.readFile(dbFilePath(), 'utf8');
+    const parsed = JSON.parse(raw) as Partial<LocalDb>;
+    return {
+      users: parsed.users ?? [],
+      foodLogs: parsed.foodLogs ?? [],
+      weightLogs: parsed.weightLogs ?? [],
+      exerciseLogs: parsed.exerciseLogs ?? [],
+    };
+  } catch (e: unknown) {
+    const err = e as { code?: unknown };
+    if (err?.code === 'ENOENT') {
+      return {
+        users: [],
+        foodLogs: [],
+        weightLogs: [],
+        exerciseLogs: [],
+      };
+    }
+    throw e;
+  }
 };
 
 export const writeLocalDb = async (db: LocalDb): Promise<void> => {
-  const raw = JSON.stringify(db, null, 2);
-  await fs.writeFile(dbFilePath(), raw, 'utf8');
+  try {
+    const raw = JSON.stringify(db, null, 2);
+    await fs.writeFile(dbFilePath(), raw, 'utf8');
+  } catch (e: unknown) {
+    const err = e as { code?: unknown };
+    if (err?.code === 'EROFS' || err?.code === 'EACCES' || err?.code === 'ENOENT') {
+      return;
+    }
+    throw e;
+  }
 };
 
 export const resetLocalDb = async (): Promise<void> => {
