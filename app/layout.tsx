@@ -7,6 +7,7 @@ import Image from 'next/image';
 
 import { BottomNav } from '@/components/BottomNav';
 import { HeaderRight } from '@/components/header/HeaderRight';
+import DashboardHeaderWeightLossDays from '@/components/header/DashboardHeaderWeightLossDays';
 import RoutePrefetcher from '@/components/RoutePrefetcher';
 import SplashVideo from '@/components/SplashVideo';
 import ToastFromSearchParams from '@/components/ToastFromSearchParams';
@@ -45,7 +46,10 @@ export default function RootLayout(props: { children: ReactNode }) {
                 <span>GuFit</span>
               </Link>
               <Suspense fallback={<div className="h-9 w-9" />}>
-                <HeaderRight />
+                <div className="flex items-center gap-2">
+                  <DashboardHeaderWeightLossDays />
+                  <HeaderRight />
+                </div>
               </Suspense>
             </div>
           </header>

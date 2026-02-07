@@ -13,19 +13,50 @@ import type { IsoDateString } from '@/types/domain';
 
 const isIsoDate = (v: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(v);
 
-export default async function WeightPage(props: { searchParams?: { date?: string } }) {
+const addDays = (iso: string, days: number): string => {
+  const parts = iso.split('-');
+  const y = Number(parts[0] ?? '0');
+  const m = Number(parts[1] ?? '1');
+  const d = Number(parts[2] ?? '1');
+  const dt = new Date(y, m - 1, d);
+  dt.setDate(dt.getDate() + days);
+  const yyyy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const isoToDate = (iso: string): Date => {
+  const parts = iso.split('-');
+  const y = Number(parts[0] ?? '0');
+  const m = Number(parts[1] ?? '1');
+  const d = Number(parts[2] ?? '1');
+  return new Date(y, m - 1, d);
+};
+
+const TH_WEEKDAYS_SHORT = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'] as const;
+
+export default async function WeightPage(props: { searchParams?: { date?: string; range?: string } }) {
   const userId = await getUserIdOrRedirect();
   const profile = await getUserProfile(userId);
   if (!profile) redirect('/profile');
 
   const dateParam = props.searchParams?.date;
   const date = (typeof dateParam === 'string' && isIsoDate(dateParam) ? dateParam : todayIsoDate()) as IsoDateString;
+
+  const rangeParam = props.searchParams?.range;
+  const range: '7' | '30' | 'all' = rangeParam === '30' ? '30' : rangeParam === 'all' ? 'all' : '7';
+
   const logs = await listWeightLogs({ userId });
   const ascending = [...logs].sort((a, b) => (a.date > b.date ? 1 : -1));
-  const last30 = ascending.slice(Math.max(0, ascending.length - 30));
-  const values = last30.map((l) => l.weightKg);
+
+  const from = (range === '7' ? addDays(date, -6) : range === '30' ? addDays(date, -29) : '2000-01-01') as IsoDateString;
+  const to = date;
+  const rangeAscending = range === 'all' ? ascending : ascending.filter((l) => l.date >= from && l.date <= to);
+
+  const values = rangeAscending.map((l) => l.weightKg);
   const latest = ascending.length > 0 ? ascending[ascending.length - 1]!.weightKg : null;
-  const firstInRange = last30.length > 0 ? last30[0]!.weightKg : null;
+  const firstInRange = rangeAscending.length > 0 ? rangeAscending[0]!.weightKg : null;
   const delta = firstInRange != null && latest != null ? latest - firstInRange : null;
   const selectedExisting = ascending.find((l) => l.date === date)?.weightKg ?? null;
   const min = values.length > 0 ? Math.min(...values) : null;
@@ -82,11 +113,44 @@ export default async function WeightPage(props: { searchParams?: { date?: string
         </form>
       </Card>
 
-      <Card title="แนวโน้ม (30 วันล่าสุด)">
+      <Card title={`แนวโน้ม (${range === 'all' ? 'ทั้งหมด' : `${range} วัน`})`}>
         {values.length < 2 ? (
           <div className="text-sm text-gray-600">ยังไม่มีข้อมูลเพียงพอสำหรับกราฟ</div>
         ) : (
           <div className="space-y-3">
+            <div className="flex items-center justify-end gap-2">
+              <a
+                href={`/weight?date=${date}&range=7`}
+                className={
+                  range === '7'
+                    ? 'rounded-full bg-teal-700 px-3 py-2 text-xs font-extrabold text-white shadow-sm'
+                    : 'rounded-full border border-gray-200 bg-white px-3 py-2 text-xs font-extrabold text-gray-900 shadow-sm'
+                }
+              >
+                7 วัน
+              </a>
+              <a
+                href={`/weight?date=${date}&range=30`}
+                className={
+                  range === '30'
+                    ? 'rounded-full bg-teal-700 px-3 py-2 text-xs font-extrabold text-white shadow-sm'
+                    : 'rounded-full border border-gray-200 bg-white px-3 py-2 text-xs font-extrabold text-gray-900 shadow-sm'
+                }
+              >
+                30 วัน
+              </a>
+              <a
+                href={`/weight?date=${date}&range=all`}
+                className={
+                  range === 'all'
+                    ? 'rounded-full bg-teal-700 px-3 py-2 text-xs font-extrabold text-white shadow-sm'
+                    : 'rounded-full border border-gray-200 bg-white px-3 py-2 text-xs font-extrabold text-gray-900 shadow-sm'
+                }
+              >
+                ทั้งหมด
+              </a>
+            </div>
+
             <div className="relative rounded-2xl bg-gray-50 p-3">
               <div className="pointer-events-none absolute left-3 right-3 top-3 z-0" style={{ height: 92 }} aria-hidden="true">
                 {ticks.map((t) => (
@@ -97,6 +161,19 @@ export default async function WeightPage(props: { searchParams?: { date?: string
                 ))}
               </div>
               <Sparkline values={values} className="relative z-10 w-full" style={{ width: '100%', height: 92 }} showArea showLastDot />
+              <div className="mt-2 flex items-end justify-between gap-2 overflow-x-auto pb-1">
+                {rangeAscending.map((l) => {
+                  const dt = isoToDate(l.date);
+                  const wd = TH_WEEKDAYS_SHORT[dt.getDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6];
+                  const day = String(dt.getDate());
+                  return (
+                    <div key={l.date} className="min-w-[26px] text-center">
+                      <div className="text-[11px] font-semibold text-gray-700">{wd}</div>
+                      <div className="text-[11px] font-semibold text-gray-500">{day}</div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-3xl border border-gray-100 bg-gray-50/80 p-3 shadow-sm">
@@ -137,14 +214,17 @@ export default async function WeightPage(props: { searchParams?: { date?: string
           <div className="text-sm text-gray-600">ยังไม่มีการบันทึกน้ำหนัก</div>
         ) : (
           <ul className="space-y-2">
-            {logs.slice(0, 14).map((l) => (
-              <li key={l.id} className="flex items-center justify-between text-sm">
-                <a className="text-gray-700 underline-offset-4 hover:underline" href={`/weight?date=${l.date}`}>
-                  {l.date}
-                </a>
-                <span className="font-semibold">{fmt1(l.weightKg)} กก.</span>
-              </li>
-            ))}
+            {[...ascending]
+              .sort((a, b) => (a.date > b.date ? -1 : 1))
+              .slice(0, 5)
+              .map((l) => (
+                <li key={l.id} className="flex items-center justify-between text-sm">
+                  <a className="text-gray-700 underline-offset-4 hover:underline" href={`/weight?date=${l.date}`}>
+                    {l.date}
+                  </a>
+                  <span className="font-semibold">{fmt1(l.weightKg)} กก.</span>
+                </li>
+              ))}
           </ul>
         )}
       </Card>

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
-import { Card, Pill } from '@/components/ui';
+import { Card } from '@/components/ui';
 import DashboardCaloriesBarsClient from '@/components/dashboard/DashboardCaloriesBarsClient';
 import { fmt0, fmt1 } from '@/lib/format';
 import { calculateBmr, calculateDailyCalorieTarget, calculateTdee } from '@/lib/calculations/metabolism';
@@ -159,42 +159,43 @@ export default async function DashboardPage(props: { searchParams?: { range?: st
           <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">วันนี้</h1>
           <div className="text-sm font-semibold text-gray-600">{date}</div>
         </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href={`/dashboard?range=7`}
-            className={
-              range === '7'
-                ? 'rounded-full bg-teal-700 px-3 py-2 text-xs font-extrabold text-white shadow-sm'
-                : 'rounded-full border border-gray-200 bg-white px-3 py-2 text-xs font-extrabold text-gray-900 shadow-sm'
-            }
-          >
-            7 วัน
-          </Link>
-          <Link
-            href={`/dashboard?range=30`}
-            className={
-              range === '30'
-                ? 'rounded-full bg-teal-700 px-3 py-2 text-xs font-extrabold text-white shadow-sm'
-                : 'rounded-full border border-gray-200 bg-white px-3 py-2 text-xs font-extrabold text-gray-900 shadow-sm'
-            }
-          >
-            30 วัน
-          </Link>
-          <Link
-            href={`/dashboard?range=all`}
-            className={
-              range === 'all'
-                ? 'rounded-full bg-teal-700 px-3 py-2 text-xs font-extrabold text-white shadow-sm'
-                : 'rounded-full border border-gray-200 bg-white px-3 py-2 text-xs font-extrabold text-gray-900 shadow-sm'
-            }
-          >
-            ทั้งหมด
-          </Link>
-        </div>
+        <div />
       </div>
 
       <Card title="แคลอรี่">
         <div className="space-y-3">
+          <div className="flex items-center justify-end gap-2">
+            <Link
+              href={`/dashboard?range=7`}
+              className={
+                range === '7'
+                  ? 'rounded-full bg-teal-700 px-3 py-2 text-xs font-extrabold text-white shadow-sm'
+                  : 'rounded-full border border-gray-200 bg-white px-3 py-2 text-xs font-extrabold text-gray-900 shadow-sm'
+              }
+            >
+              7 วัน
+            </Link>
+            <Link
+              href={`/dashboard?range=30`}
+              className={
+                range === '30'
+                  ? 'rounded-full bg-teal-700 px-3 py-2 text-xs font-extrabold text-white shadow-sm'
+                  : 'rounded-full border border-gray-200 bg-white px-3 py-2 text-xs font-extrabold text-gray-900 shadow-sm'
+              }
+            >
+              30 วัน
+            </Link>
+            <Link
+              href={`/dashboard?range=all`}
+              className={
+                range === 'all'
+                  ? 'rounded-full bg-teal-700 px-3 py-2 text-xs font-extrabold text-white shadow-sm'
+                  : 'rounded-full border border-gray-200 bg-white px-3 py-2 text-xs font-extrabold text-gray-900 shadow-sm'
+              }
+            >
+              ทั้งหมด
+            </Link>
+          </div>
           <div className="relative rounded-2xl bg-gray-50 p-3">
             {calorieTicks.map((t) => (
               <div
@@ -281,9 +282,6 @@ export default async function DashboardPage(props: { searchParams?: { range?: st
         <div className="flex items-baseline justify-between">
           <div className="text-sm font-semibold text-gray-600">ล่าสุด</div>
           <div className="text-3xl font-extrabold tracking-tight text-gray-900">{fmt1(latestWeight)} <span className="text-base font-extrabold text-gray-600">กก.</span></div>
-        </div>
-        <div className="mt-2">
-          <Pill tone="muted">ไปหน้าชั่งน้ำหนักเพื่อแก้ไขย้อนหลัง</Pill>
         </div>
       </Card>
 

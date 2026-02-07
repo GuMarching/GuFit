@@ -7,17 +7,20 @@ export default function SplashVideo(props: {
   ms?: number;
 }) {
   const src = props.src ?? '/splash.mp4';
-  const ms = props.ms ?? 2600;
+  const ms = props.ms ?? 4000;
 
   const key = useMemo(() => 'gufit_splash_v1', []);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const [blocked, setBlocked] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     try {
       const seen = sessionStorage.getItem(key);
-      if (seen === '1') return;
+      if (seen === '1') {
+        setOpen(false);
+        return;
+      }
       sessionStorage.setItem(key, '1');
       setOpen(true);
     } catch {
@@ -34,22 +37,24 @@ export default function SplashVideo(props: {
   if (!open || blocked) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black">
-      <video
-        ref={videoRef}
-        src={src}
-        className="h-full w-full object-cover"
-        autoPlay
-        muted
-        playsInline
-        preload="metadata"
-        disablePictureInPicture
-        onError={() => {
-          setBlocked(true);
-          setOpen(false);
-        }}
-        onEnded={() => setOpen(false)}
-      />
+    <div className="fixed inset-0 z-[100] grid place-items-center bg-black">
+      <div className="w-1/2 max-w-[320px]">
+        <video
+          ref={videoRef}
+          src={src}
+          className="aspect-video w-full rounded-2xl object-contain"
+          autoPlay
+          muted
+          playsInline
+          preload="metadata"
+          disablePictureInPicture
+          onError={() => {
+            setBlocked(true);
+            setOpen(false);
+          }}
+          onEnded={() => setOpen(false)}
+        />
+      </div>
     </div>
   );
 }
