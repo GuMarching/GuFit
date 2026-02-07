@@ -1,8 +1,9 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 
-import { Card, Field, Input, Select, DangerButton } from '@/components/ui';
+import { Card, Field, Input, Select } from '@/components/ui';
 import SubmitButton from '@/components/SubmitButton';
+import ConfirmSubmitDanger from '@/components/ConfirmSubmitDanger';
 import { getUserProfile, saveUserProfile } from '@/lib/services/userService';
 import type { ActivityLevel, Gender, GoalType, IsoDateString } from '@/types/domain';
 import { resetLocalDb, todayIsoDate } from '@/db/local/store';
@@ -60,7 +61,7 @@ export default async function ProfilePage() {
       startDate: start,
     });
 
-    redirect('/dashboard');
+    redirect(`/dashboard?ok=${encodeURIComponent('บันทึกโปรไฟล์เรียบร้อยแล้ว')}`);
   };
 
   const resetAll = async (formData: FormData) => {
@@ -71,27 +72,33 @@ export default async function ProfilePage() {
       redirect('/profile');
     }
 
-    if (isSupabaseEnabled()) {
-      const cookieStore = await cookies();
-      const sb = createSupabaseServerClientReadonly({
-        getAll: () => cookieStore.getAll().map((c) => ({ name: c.name, value: c.value })),
-      });
+    try {
+      if (isSupabaseEnabled()) {
+        const cookieStore = await cookies();
+        const sb = createSupabaseServerClientReadonly({
+          getAll: () => cookieStore.getAll().map((c) => ({ name: c.name, value: c.value })),
+        });
 
-      const foodRes = await sb.from('food_logs').delete().eq('user_id', userId);
-      if (foodRes.error) throw new Error(foodRes.error.message);
+        const foodRes = await sb.from('food_logs').delete().eq('user_id', userId);
+        if (foodRes.error) throw new Error(foodRes.error.message);
 
-      const exerciseRes = await sb.from('exercise_logs').delete().eq('user_id', userId);
-      if (exerciseRes.error) throw new Error(exerciseRes.error.message);
+        const exerciseRes = await sb.from('exercise_logs').delete().eq('user_id', userId);
+        if (exerciseRes.error) throw new Error(exerciseRes.error.message);
 
-      const weightRes = await sb.from('weight_logs').delete().eq('user_id', userId);
-      if (weightRes.error) throw new Error(weightRes.error.message);
+        const weightRes = await sb.from('weight_logs').delete().eq('user_id', userId);
+        if (weightRes.error) throw new Error(weightRes.error.message);
 
-      const profileRes = await sb.from('profiles').delete().eq('id', userId);
-      if (profileRes.error) throw new Error(profileRes.error.message);
-    } else {
-      await resetLocalDb();
+        const profileRes = await sb.from('profiles').delete().eq('id', userId);
+        if (profileRes.error) throw new Error(profileRes.error.message);
+      } else {
+        await resetLocalDb();
+      }
+
+      redirect(`/profile?ok=${encodeURIComponent('ลบข้อมูลเรียบร้อยแล้ว')}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'ไม่สามารถลบข้อมูลได้';
+      redirect(`/profile?err=${encodeURIComponent(msg)}`);
     }
-    redirect('/profile');
   };
 
   return (
@@ -183,7 +190,11 @@ export default async function ProfilePage() {
           <Field label="พิมพ์ RESET เพื่อยืนยัน">
             <Input name="confirmReset" placeholder="RESET" />
           </Field>
-          <DangerButton type="submit">ล้างข้อมูลทั้งหมด</DangerButton>
+          <ConfirmSubmitDanger
+            label="ล้างข้อมูลทั้งหมด"
+            confirmTitle="ลบข้อมูลทั้งหมด"
+            confirmText="การลบจะล้างข้อมูลทั้งหมด (อาหาร/กิจกรรม/น้ำหนัก/โปรไฟล์) และไม่สามารถกู้คืนได้ ต้องการลบจริงหรือไม่?"
+          />
         </form>
       </Card>
     </div>

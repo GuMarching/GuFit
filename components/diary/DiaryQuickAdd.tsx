@@ -27,6 +27,41 @@ type EstimatedFood = {
 
 const safeMsg = (e: unknown, fallback: string) => (e instanceof Error ? e.message : String(e ?? fallback));
 
+const fileToResizedJpeg = async (file: File, opts?: { maxDim?: number; quality?: number }): Promise<File> => {
+  const maxDim = opts?.maxDim ?? 1280;
+  const quality = opts?.quality ?? 0.78;
+
+  if (typeof window === 'undefined') return file;
+  if (!file.type.startsWith('image/')) return file;
+
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await createImageBitmap(file);
+    const w = img.width;
+    const h = img.height;
+    const scale = Math.min(1, maxDim / Math.max(w, h));
+    const outW = Math.max(1, Math.round(w * scale));
+    const outH = Math.max(1, Math.round(h * scale));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = outW;
+    canvas.height = outH;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return file;
+    ctx.drawImage(img, 0, 0, outW, outH);
+
+    const blob: Blob | null = await new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/jpeg', quality));
+    if (!blob) return file;
+
+    const name = file.name.replace(/\.[^/.]+$/, '') + '.jpg';
+    return new File([blob], name, { type: 'image/jpeg' });
+  } catch {
+    return file;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+};
+
 type DetectedFood = {
   foodName: string;
   defaultUnit: string;
@@ -112,6 +147,8 @@ export const DiaryQuickAdd = (props: {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const suppressAutoOpenRef = useRef(false);
+
   const catalog = useMemo(() => FOOD_CATALOG_TH, []);
 
   const addParam = searchParams?.get('add');
@@ -132,6 +169,7 @@ export const DiaryQuickAdd = (props: {
   }, [estimated]);
 
   const close = () => {
+    suppressAutoOpenRef.current = true;
     setOpen(false);
     setMode('menu');
     setPhoto(null);
@@ -209,11 +247,17 @@ export const DiaryQuickAdd = (props: {
 
   useEffect(() => {
     if (!addParam) return;
+    if (suppressAutoOpenRef.current) return;
     // Important: don't reset `mode` on re-renders (typing) while the sheet is already open.
     if (open) return;
     setOpen(true);
     setMode('menu');
   }, [addParam, open, searchParams]);
+
+  useEffect(() => {
+    if (addParam) return;
+    suppressAutoOpenRef.current = false;
+  }, [addParam]);
 
   useEffect(() => {
     if (!open) return;
@@ -269,9 +313,10 @@ export const DiaryQuickAdd = (props: {
     setEstimateErr(null);
     setEstimated(null);
     try {
+      const prepared = await fileToResizedJpeg(photo);
       const fd = new FormData();
       fd.set('date', props.date);
-      fd.set('image', photo);
+      fd.set('image', prepared);
       const amt = amountRef.current.trim();
       setAmountSnapshot(amt);
       if (amt) fd.set('amount', amt);
@@ -656,16 +701,19 @@ export const DiaryQuickAdd = (props: {
                   accept="image/*"
                   capture="environment"
                   className="hidden"
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const f = e.target.files?.[0] ?? null;
-                    setPhoto(f);
+                    setPhoto(null);
                     setEstimated(null);
                     setEstimateErr(null);
                     setDetected(null);
-                    if (f) {
-                      setDetecting(true);
-                      // We intentionally avoid an extra Gemini call here to save quota.
-                      // Proceed with a local fallback and let Gemini run only on "ประเมิน".
+                    if (!f) return;
+
+                    setDetecting(true);
+                    try {
+                      const prepared = await fileToResizedJpeg(f);
+                      setPhoto(prepared);
+                    } finally {
                       setLocalDetectedFallback();
                     }
                   }}

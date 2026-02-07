@@ -1,11 +1,13 @@
 import { redirect } from 'next/navigation';
 
-import { Card, Field, Input, DangerButton } from '@/components/ui';
+import { Card, Field, Input } from '@/components/ui';
 import SubmitButton from '@/components/SubmitButton';
+import ConfirmSubmitDanger from '@/components/ConfirmSubmitDanger';
 import { addFoodLog, deleteFoodLog, listFoodLogsByDate } from '@/lib/services/foodService';
 import { getUserProfile } from '@/lib/services/userService';
 import { getUserIdOrRedirect } from '@/lib/supabase/auth';
 import { todayIsoDate } from '@/db/local/store';
+import { fmt1 } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,17 +38,21 @@ export default async function FoodPage() {
       throw new Error('Invalid form data');
     }
 
-    await addFoodLog({
-      userId: profile.id,
-      date,
-      foodName,
-      calories: Number(calories),
-      protein: Number(protein),
-      fat: Number(fat),
-      carbs: Number(carbs),
-    });
-
-    redirect('/food');
+    try {
+      await addFoodLog({
+        userId: profile.id,
+        date,
+        foodName,
+        calories: Number(calories),
+        protein: Number(protein),
+        fat: Number(fat),
+        carbs: Number(carbs),
+      });
+      redirect(`/food?ok=${encodeURIComponent('เพิ่มรายการอาหารเรียบร้อยแล้ว')}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'เพิ่มไม่สำเร็จ';
+      redirect(`/food?err=${encodeURIComponent(msg)}`);
+    }
   };
 
   const removeLog = async (formData: FormData) => {
@@ -55,8 +61,13 @@ export default async function FoodPage() {
     const id = formData.get('id');
     if (typeof id !== 'string') throw new Error('Invalid id');
 
-    await deleteFoodLog({ userId: profile.id, id });
-    redirect('/food');
+    try {
+      await deleteFoodLog({ userId: profile.id, id });
+      redirect(`/food?ok=${encodeURIComponent('ลบรายการเรียบร้อยแล้ว')}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'ลบไม่สำเร็จ';
+      redirect(`/food?err=${encodeURIComponent(msg)}`);
+    }
   };
 
   const total = logs.reduce((sum, l) => sum + l.calories, 0);
@@ -103,14 +114,14 @@ export default async function FoodPage() {
                       <div className="min-w-0">
                         <div className="truncate text-sm font-medium">{l.foodName}</div>
                         <div className="text-xs text-gray-600">
-                          P {l.protein}g / F {l.fat}g / C {l.carbs}g
+                          P {fmt1(l.protein)}g / F {fmt1(l.fat)}g / C {fmt1(l.carbs)}g
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="text-sm font-semibold">{l.calories}</div>
                         <form action={removeLog}>
                           <input type="hidden" name="id" value={l.id} />
-                          <DangerButton type="submit">ลบ</DangerButton>
+                          <ConfirmSubmitDanger label="ลบ" confirmTitle="ยืนยันการลบ" confirmText="ต้องการลบรายการอาหารนี้จริงหรือไม่?" />
                         </form>
                       </div>
                     </li>

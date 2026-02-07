@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from 'react';
 
+import { fmt1 } from '@/lib/format';
+
 type DayBar = {
   date: string;
   wd: string;
@@ -34,9 +36,9 @@ export default function DashboardCaloriesBarsClient(props: {
     return {
       title: `${activeDay.wd} ${activeDay.day}`,
       total: Math.round(activeDay.macroKcal),
-      proteinG: Math.round(activeDay.proteinKcal / 4),
-      carbsG: Math.round(activeDay.carbsKcal / 4),
-      fatG: Math.round(activeDay.fatKcal / 9),
+      proteinG: fmt1(activeDay.proteinKcal / 4),
+      carbsG: fmt1(activeDay.carbsKcal / 4),
+      fatG: fmt1(activeDay.fatKcal / 9),
       proteinPct,
       carbsPct,
       fatPct,

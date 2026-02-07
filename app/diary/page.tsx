@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 
 import { Card, Field, Input, Progress, StatRow } from '@/components/ui';
 import SubmitSecondaryButton from '@/components/SubmitSecondaryButton';
-import SubmitDangerButton from '@/components/SubmitDangerButton';
+import ConfirmSubmitDanger from '@/components/ConfirmSubmitDanger';
 import { getUserProfile } from '@/lib/services/userService';
 import { listFoodLogsByDate } from '@/lib/services/foodService';
 import { listExerciseLogsByDate } from '@/lib/services/exerciseService';
@@ -13,6 +13,7 @@ import { calculateBmr, calculateDailyCalorieTarget, calculateTdee } from '@/lib/
 import { DiaryDateNav } from '@/components/diary/DiaryDateNav';
 import { DiaryQuickAdd } from '@/components/diary/DiaryQuickAdd';
 import { isGeminiEnabled } from '@/lib/services/geminiService';
+import { fmt1 } from '@/lib/format';
 import type { IsoDateString } from '@/types/domain';
 import { getUserIdOrRedirect } from '@/lib/supabase/auth';
 
@@ -77,24 +78,34 @@ export default async function DiaryPage(props: { searchParams?: { date?: string;
     ) {
       redirect(`/diary?date=${date}&err=${encodeURIComponent('ข้อมูลไม่ถูกต้อง')}`);
     }
-    await updateFoodLog({
-      userId: profile.id,
-      id,
-      foodName,
-      calories: Number(calories),
-      protein: Number(proteinV),
-      fat: Number(fatV),
-      carbs: Number(carbsV),
-    });
-    redirect(`/diary?date=${date}`);
+    try {
+      await updateFoodLog({
+        userId: profile.id,
+        id,
+        foodName,
+        calories: Number(calories),
+        protein: Number(proteinV),
+        fat: Number(fatV),
+        carbs: Number(carbsV),
+      });
+      redirect(`/diary?date=${date}&ok=${encodeURIComponent('บันทึกเรียบร้อยแล้ว')}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'บันทึกไม่สำเร็จ';
+      redirect(`/diary?date=${date}&err=${encodeURIComponent(msg)}`);
+    }
   };
 
   const removeFood = async (formData: FormData) => {
     'use server';
     const id = formData.get('id');
     if (typeof id !== 'string') redirect(`/diary?date=${date}&err=${encodeURIComponent('ข้อมูลไม่ถูกต้อง')}`);
-    await deleteFoodLog({ userId: profile.id, id });
-    redirect(`/diary?date=${date}`);
+    try {
+      await deleteFoodLog({ userId: profile.id, id });
+      redirect(`/diary?date=${date}&ok=${encodeURIComponent('ลบรายการเรียบร้อยแล้ว')}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'ลบไม่สำเร็จ';
+      redirect(`/diary?date=${date}&err=${encodeURIComponent(msg)}`);
+    }
   };
 
   const updateExercise = async (formData: FormData) => {
@@ -105,21 +116,31 @@ export default async function DiaryPage(props: { searchParams?: { date?: string;
     if (typeof id !== 'string' || typeof name !== 'string' || typeof caloriesBurned !== 'string') {
       redirect(`/diary?date=${date}&err=${encodeURIComponent('ข้อมูลไม่ถูกต้อง')}`);
     }
-    await updateExerciseLog({
-      userId: profile.id,
-      id,
-      name,
-      caloriesBurned: Number(caloriesBurned),
-    });
-    redirect(`/diary?date=${date}`);
+    try {
+      await updateExerciseLog({
+        userId: profile.id,
+        id,
+        name,
+        caloriesBurned: Number(caloriesBurned),
+      });
+      redirect(`/diary?date=${date}&ok=${encodeURIComponent('บันทึกเรียบร้อยแล้ว')}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'บันทึกไม่สำเร็จ';
+      redirect(`/diary?date=${date}&err=${encodeURIComponent(msg)}`);
+    }
   };
 
   const removeExercise = async (formData: FormData) => {
     'use server';
     const id = formData.get('id');
     if (typeof id !== 'string') redirect(`/diary?date=${date}&err=${encodeURIComponent('ข้อมูลไม่ถูกต้อง')}`);
-    await deleteExerciseLog({ userId: profile.id, id });
-    redirect(`/diary?date=${date}`);
+    try {
+      await deleteExerciseLog({ userId: profile.id, id });
+      redirect(`/diary?date=${date}&ok=${encodeURIComponent('ลบรายการเรียบร้อยแล้ว')}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'ลบไม่สำเร็จ';
+      redirect(`/diary?date=${date}&err=${encodeURIComponent(msg)}`);
+    }
   };
 
   return (
@@ -165,23 +186,23 @@ export default async function DiaryPage(props: { searchParams?: { date?: string;
             <div className="rounded-3xl border border-gray-100 bg-gray-50/80 p-3 shadow-sm">
               <div className="text-[11px] font-semibold text-gray-600">โปรตีนคงเหลือ</div>
               <div className={proteinLeft >= 0 ? 'mt-1 text-base font-extrabold text-teal-800' : 'mt-1 text-base font-extrabold text-rose-700'}>
-                {proteinLeft}g
+                {fmt1(proteinLeft)}g
               </div>
-              <div className="mt-1 text-[11px] font-semibold text-gray-600">กิน {protein} / {proteinTarget}g</div>
+              <div className="mt-1 text-[11px] font-semibold text-gray-600">กิน {fmt1(protein)} / {proteinTarget}g</div>
             </div>
             <div className="rounded-3xl border border-gray-100 bg-gray-50/80 p-3 shadow-sm">
               <div className="text-[11px] font-semibold text-gray-600">ไขมันคงเหลือ</div>
               <div className={fatLeft >= 0 ? 'mt-1 text-base font-extrabold text-teal-800' : 'mt-1 text-base font-extrabold text-rose-700'}>
-                {fatLeft}g
+                {fmt1(fatLeft)}g
               </div>
-              <div className="mt-1 text-[11px] font-semibold text-gray-600">กิน {fat} / {fatTarget}g</div>
+              <div className="mt-1 text-[11px] font-semibold text-gray-600">กิน {fmt1(fat)} / {fatTarget}g</div>
             </div>
             <div className="rounded-3xl border border-gray-100 bg-gray-50/80 p-3 shadow-sm">
               <div className="text-[11px] font-semibold text-gray-600">คาร์บคงเหลือ</div>
               <div className={carbsLeft >= 0 ? 'mt-1 text-base font-extrabold text-teal-800' : 'mt-1 text-base font-extrabold text-rose-700'}>
-                {carbsLeft}g
+                {fmt1(carbsLeft)}g
               </div>
-              <div className="mt-1 text-[11px] font-semibold text-gray-600">กิน {carbs} / {carbsTarget}g</div>
+              <div className="mt-1 text-[11px] font-semibold text-gray-600">กิน {fmt1(carbs)} / {carbsTarget}g</div>
             </div>
           </div>
 
@@ -203,7 +224,7 @@ export default async function DiaryPage(props: { searchParams?: { date?: string;
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-semibold">{l.foodName}</div>
                   <div className="text-xs text-gray-600">
-                    {l.calories} แคล · โปรตีน {l.protein}g · ไขมัน {l.fat}g · คาร์บ {l.carbs}g
+                    {l.calories} แคล · โปรตีน {fmt1(l.protein)}g · ไขมัน {fmt1(l.fat)}g · คาร์บ {fmt1(l.carbs)}g
                   </div>
 
                   <details className="mt-2">
@@ -235,7 +256,7 @@ export default async function DiaryPage(props: { searchParams?: { date?: string;
                 <div className="flex flex-col gap-2">
                   <form action={removeFood}>
                     <input type="hidden" name="id" value={l.id} />
-                    <SubmitDangerButton loadingText="กำลังลบ…">ลบ</SubmitDangerButton>
+                    <ConfirmSubmitDanger label="ลบ" confirmTitle="ยืนยันการลบ" confirmText="ต้องการลบรายการอาหารนี้จริงหรือไม่?" />
                   </form>
                 </div>
               </li>
@@ -273,7 +294,7 @@ export default async function DiaryPage(props: { searchParams?: { date?: string;
                 <div className="flex flex-col gap-2">
                   <form action={removeExercise}>
                     <input type="hidden" name="id" value={l.id} />
-                    <SubmitDangerButton loadingText="กำลังลบ…">ลบ</SubmitDangerButton>
+                    <ConfirmSubmitDanger label="ลบ" confirmTitle="ยืนยันการลบ" confirmText="ต้องการลบรายการกิจกรรมนี้จริงหรือไม่?" />
                   </form>
                 </div>
               </li>

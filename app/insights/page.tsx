@@ -7,6 +7,7 @@ import { listWeightLogs } from '@/lib/services/weightService';
 import { todayIsoDate } from '@/db/local/store';
 import { Sparkline } from '@/components/sparkline';
 import { getUserIdOrRedirect } from '@/lib/supabase/auth';
+import { fmt0, fmt1 } from '@/lib/format';
 import type { IsoDateString } from '@/types/domain';
 
 export const dynamic = 'force-dynamic';
@@ -164,7 +165,7 @@ export default async function InsightsPage() {
             <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
               <div className="rounded-xl border bg-gray-50 px-2 py-2">
                 <div className="font-semibold text-gray-900">เฉลี่ย</div>
-                <div className="mt-1 text-gray-700">{avgCalories.toFixed(0)} kcal/วัน</div>
+                <div className="mt-1 text-gray-700">{fmt0(avgCalories)} kcal/วัน</div>
               </div>
               <div className="rounded-xl border bg-gray-50 px-2 py-2">
                 <div className="font-semibold text-gray-900">สี</div>
@@ -182,7 +183,7 @@ export default async function InsightsPage() {
           </div>
 
           <div className="space-y-2">
-            <StatRow label="เฉลี่ย 7 วัน" value={Number(avgCalories.toFixed(0))} sub="kcal/วัน" />
+            <StatRow label="เฉลี่ย 7 วัน" value={Number(fmt0(avgCalories))} sub="kcal/วัน" />
           </div>
         </div>
       </Card>
@@ -198,7 +199,7 @@ export default async function InsightsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-2xl border bg-white p-3">
                 <div className="text-[11px] font-medium text-gray-600">ล่าสุด</div>
-                <div className="mt-1 text-lg font-semibold">{latestWeight.toFixed(1)} กก.</div>
+                <div className="mt-1 text-lg font-semibold">{fmt1(latestWeight)} กก.</div>
               </div>
               <div className="rounded-2xl border bg-white p-3">
                 <div className="text-[11px] font-medium text-gray-600">ช่วงข้อมูล</div>
@@ -214,12 +215,12 @@ export default async function InsightsPage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl border bg-white p-3">
               <div className="text-[11px] font-medium text-gray-600">BMI ปัจจุบัน</div>
-              <div className="mt-1 text-lg font-semibold">{Number.isFinite(bmi) ? bmi.toFixed(1) : '-'}</div>
+              <div className="mt-1 text-lg font-semibold">{fmt1(bmi)}</div>
               <div className="mt-1 text-xs font-semibold text-gray-700">{bmiLabel}</div>
             </div>
             <div className="rounded-2xl border bg-white p-3">
               <div className="text-[11px] font-medium text-gray-600">น้ำหนักล่าสุด</div>
-              <div className="mt-1 text-lg font-semibold">{latestWeight.toFixed(1)} กก.</div>
+              <div className="mt-1 text-lg font-semibold">{fmt1(latestWeight)} กก.</div>
               <div className="mt-1 text-xs text-gray-600">สูง {profile.heightCm} ซม.</div>
             </div>
           </div>

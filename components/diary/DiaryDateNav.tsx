@@ -26,12 +26,20 @@ const isoToDate = (iso: string): Date => {
 
 const TH_WEEKDAYS_SHORT = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'] as const;
 
+type DayStatus = {
+  date: string;
+  hasData: boolean;
+  left: number;
+  net: number;
+};
+
 export const DiaryDateNav = (props: { date: string; basePath?: string }) => {
   const router = useRouter();
   const basePath = props.basePath ?? '/diary';
 
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const [daysBack, setDaysBack] = useState(21);
+  const [statusByDate, setStatusByDate] = useState<Record<string, DayStatus>>({});
 
   const todayIso = useMemo(() => {
     const fmt = new Intl.DateTimeFormat('en-CA', {
@@ -56,6 +64,36 @@ export const DiaryDateNav = (props: { date: string; basePath?: string }) => {
   const days = useMemo(() => {
     return Array.from({ length: daysBack + 1 }).map((_, i) => addDays(todayIso, i - daysBack));
   }, [todayIso, daysBack]);
+
+  useEffect(() => {
+    if (days.length === 0) return;
+    const from = days[0]!;
+    const to = days[days.length - 1]!;
+
+    const ac = new AbortController();
+    const run = async () => {
+      try {
+        const res = await fetch(`/api/diary/day-status?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+          { signal: ac.signal },
+        );
+        const data: unknown = await res.json();
+        const rec = data && typeof data === 'object' ? (data as Record<string, unknown>) : null;
+        const list = Array.isArray(rec?.days) ? (rec!.days as DayStatus[]) : [];
+        const next: Record<string, DayStatus> = {};
+        for (const d of list) {
+          if (!d || typeof d !== 'object') continue;
+          if (typeof d.date !== 'string') continue;
+          next[d.date] = d;
+        }
+        setStatusByDate((prev) => ({ ...prev, ...next }));
+      } catch {
+        // ignore
+      }
+    };
+    run();
+
+    return () => ac.abort();
+  }, [days]);
 
   useEffect(() => {
     const el = scrollerRef.current;
@@ -104,6 +142,43 @@ export const DiaryDateNav = (props: { date: string; basePath?: string }) => {
           const dd = String(dt.getDate());
           const selected = iso === props.date;
           const isToday = iso === todayIso;
+          const st = statusByDate[iso];
+          const hasData = Boolean(st?.hasData);
+          const over = hasData ? (st?.left ?? 0) < 0 : false;
+
+          const baseCls =
+            'min-w-[56px] rounded-2xl border px-3 py-2 text-center shadow-sm transition active:translate-y-px active:scale-[0.99]';
+
+          const cls = selected
+            ? `${baseCls} border-2 border-teal-700 bg-teal-50`
+            : isToday
+              ? `${baseCls} border-slate-300 bg-slate-100`
+              : hasData
+                ? over
+                  ? `${baseCls} border-rose-200 bg-rose-50`
+                  : `${baseCls} border-emerald-200 bg-emerald-50`
+                : `${baseCls} border-gray-200 bg-white hover:bg-gray-50`;
+
+          const wdCls = selected
+            ? 'text-[11px] font-semibold text-teal-800'
+            : isToday
+              ? 'text-[11px] font-semibold text-slate-700'
+              : hasData
+                ? over
+                  ? 'text-[11px] font-semibold text-rose-800'
+                  : 'text-[11px] font-semibold text-emerald-800'
+                : 'text-[11px] font-semibold text-gray-700';
+
+          const ddCls = selected
+            ? 'text-sm font-extrabold text-teal-900'
+            : isToday
+              ? 'text-sm font-extrabold text-slate-900'
+              : hasData
+                ? over
+                  ? 'text-sm font-extrabold text-rose-900'
+                  : 'text-sm font-extrabold text-emerald-900'
+                : 'text-sm font-extrabold text-gray-900';
+
           return (
             <button
               key={iso}
@@ -111,27 +186,17 @@ export const DiaryDateNav = (props: { date: string; basePath?: string }) => {
               onClick={() => router.push(`${basePath}?date=${iso}`)}
               onMouseEnter={() => router.prefetch(`${basePath}?date=${iso}`)}
               onTouchStart={() => router.prefetch(`${basePath}?date=${iso}`)}
-              className={
-                selected
-                  ? 'min-w-[56px] rounded-full border-2 border-teal-700 bg-teal-50 px-3 py-2 text-center shadow-sm transition active:translate-y-px active:scale-[0.99]'
-                  : isToday
-                    ? 'min-w-[56px] rounded-full border-2 border-teal-200 bg-white px-3 py-2 text-center shadow-sm transition active:translate-y-px active:scale-[0.99]'
-                    : 'min-w-[56px] rounded-full border border-gray-200 bg-white px-3 py-2 text-center shadow-sm transition hover:bg-gray-50 active:translate-y-px active:scale-[0.99]'
-              }
+              className={cls}
             >
               <div className="relative">
-                <div className={selected ? 'text-[11px] font-semibold text-teal-800' : 'text-[11px] font-semibold text-gray-700'}>
-                  {wd}
-                </div>
-                <div className={selected ? 'text-sm font-extrabold text-teal-900' : 'text-sm font-extrabold text-gray-900'}>
-                  {dd}
-                </div>
+                <div className={wdCls}>{wd}</div>
+                <div className={ddCls}>{dd}</div>
                 {isToday ? (
                   <span
                     className={
                       selected
                         ? 'absolute -right-1 -top-1 h-2 w-2 rounded-full bg-teal-700'
-                        : 'absolute -right-1 -top-1 h-2 w-2 rounded-full bg-teal-400'
+                        : 'absolute -right-1 -top-1 h-2 w-2 rounded-full bg-slate-500'
                     }
                     aria-label="วันนี้"
                   />

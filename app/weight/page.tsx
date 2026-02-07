@@ -8,6 +8,7 @@ import { todayIsoDate } from '@/db/local/store';
 import { Sparkline } from '@/components/sparkline';
 import { getUserIdOrRedirect } from '@/lib/supabase/auth';
 import { DiaryDateNav } from '@/components/diary/DiaryDateNav';
+import { fmt1 } from '@/lib/format';
 import type { IsoDateString } from '@/types/domain';
 
 const isIsoDate = (v: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -24,6 +25,8 @@ export default async function WeightPage(props: { searchParams?: { date?: string
   const last30 = ascending.slice(Math.max(0, ascending.length - 30));
   const values = last30.map((l) => l.weightKg);
   const latest = ascending.length > 0 ? ascending[ascending.length - 1]!.weightKg : null;
+  const firstInRange = last30.length > 0 ? last30[0]!.weightKg : null;
+  const delta = firstInRange != null && latest != null ? latest - firstInRange : null;
   const selectedExisting = ascending.find((l) => l.date === date)?.weightKg ?? null;
   const min = values.length > 0 ? Math.min(...values) : null;
   const max = values.length > 0 ? Math.max(...values) : null;
@@ -40,13 +43,17 @@ export default async function WeightPage(props: { searchParams?: { date?: string
     const weightKg = formData.get('weightKg');
     if (typeof weightKg !== 'string') throw new Error('Invalid form data');
 
-    await upsertWeightForDate({
-      userId: profile.id,
-      date,
-      weightKg: Number(weightKg),
-    });
-
-    redirect(`/weight?date=${date}`);
+    try {
+      await upsertWeightForDate({
+        userId: profile.id,
+        date,
+        weightKg: Number(weightKg),
+      });
+      redirect(`/weight?date=${date}&ok=${encodeURIComponent('บันทึกน้ำหนักเรียบร้อยแล้ว')}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'บันทึกไม่สำเร็จ';
+      redirect(`/weight?date=${date}&err=${encodeURIComponent(msg)}`);
+    }
   };
 
   return (
@@ -81,28 +88,44 @@ export default async function WeightPage(props: { searchParams?: { date?: string
         ) : (
           <div className="space-y-3">
             <div className="relative rounded-2xl bg-gray-50 p-3">
-              <div className="pointer-events-none absolute left-3 right-3 top-3 z-0" style={{ height: 72 }} aria-hidden="true">
+              <div className="pointer-events-none absolute left-3 right-3 top-3 z-0" style={{ height: 92 }} aria-hidden="true">
                 {ticks.map((t) => (
-                  <div key={t.p} className="absolute left-0 right-0" style={{ top: `${(1 - t.p) * 72}px` }}>
-                    <div className="absolute -right-0 top-0 -translate-y-1/2 text-[11px] font-semibold text-gray-500">{t.v.toFixed(1)}</div>
+                  <div key={t.p} className="absolute left-0 right-0" style={{ top: `${(1 - t.p) * 92}px` }}>
+                    <div className="absolute -right-0 top-0 -translate-y-1/2 text-[11px] font-semibold text-gray-500">{fmt1(t.v)}</div>
                     {t.p === 0 || t.p === 1 ? null : <div className="h-px w-full bg-gray-200" />}
                   </div>
                 ))}
               </div>
-              <Sparkline values={values} className="relative z-10 w-full" style={{ width: '100%', height: 72 }} />
+              <Sparkline values={values} className="relative z-10 w-full" style={{ width: '100%', height: 92 }} showArea showLastDot />
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div className="rounded-3xl border border-gray-100 bg-gray-50/80 p-3 shadow-sm">
                 <div className="text-[11px] font-semibold text-gray-600">ล่าสุด</div>
-                <div className="mt-1 text-base font-extrabold text-gray-900">{latest ?? '-'} กก.</div>
+                <div className="mt-1 text-base font-extrabold text-gray-900">{latest == null ? '-' : fmt1(latest)} กก.</div>
               </div>
               <div className="rounded-3xl border border-gray-100 bg-gray-50/80 p-3 shadow-sm">
+                <div className="text-[11px] font-semibold text-gray-600">เปลี่ยนแปลง</div>
+                <div className={
+                  delta == null
+                    ? 'mt-1 text-base font-extrabold text-gray-900'
+                    : delta <= 0
+                      ? 'mt-1 text-base font-extrabold text-teal-800'
+                      : 'mt-1 text-base font-extrabold text-rose-700'
+                }>
+                  {delta == null ? '-' : `${delta > 0 ? '+' : ''}${fmt1(delta)} กก.`}
+                </div>
+                <div className="mt-1 text-[11px] font-semibold text-gray-600">ใน 30 วัน</div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-3xl border border-gray-100 bg-gray-50/80 p-3 shadow-sm">
                 <div className="text-[11px] font-semibold text-gray-600">ต่ำสุด</div>
-                <div className="mt-1 text-base font-extrabold text-gray-900">{min ?? '-'} กก.</div>
+                <div className="mt-1 text-base font-extrabold text-gray-900">{min == null ? '-' : fmt1(min)} กก.</div>
               </div>
               <div className="rounded-3xl border border-gray-100 bg-gray-50/80 p-3 shadow-sm">
                 <div className="text-[11px] font-semibold text-gray-600">สูงสุด</div>
-                <div className="mt-1 text-base font-extrabold text-gray-900">{max ?? '-'} กก.</div>
+                <div className="mt-1 text-base font-extrabold text-gray-900">{max == null ? '-' : fmt1(max)} กก.</div>
               </div>
             </div>
           </div>
@@ -119,7 +142,7 @@ export default async function WeightPage(props: { searchParams?: { date?: string
                 <a className="text-gray-700 underline-offset-4 hover:underline" href={`/weight?date=${l.date}`}>
                   {l.date}
                 </a>
-                <span className="font-semibold">{l.weightKg} กก.</span>
+                <span className="font-semibold">{fmt1(l.weightKg)} กก.</span>
               </li>
             ))}
           </ul>

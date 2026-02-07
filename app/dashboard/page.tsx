@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 
 import { Card, Pill } from '@/components/ui';
 import DashboardCaloriesBarsClient from '@/components/dashboard/DashboardCaloriesBarsClient';
+import { fmt0, fmt1 } from '@/lib/format';
 import { calculateBmr, calculateDailyCalorieTarget, calculateTdee } from '@/lib/calculations/metabolism';
 import { listFoodLogsByRange } from '@/lib/services/foodService';
 import { getUserProfile } from '@/lib/services/userService';
@@ -242,7 +243,7 @@ export default async function DashboardPage(props: { searchParams?: { range?: st
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl bg-gray-50 p-3">
               <div className="text-[11px] font-medium text-gray-600">เฉลี่ย {range === 'all' ? 'ทั้งหมด' : `${range} วัน`}</div>
-              <div className="mt-1 text-base font-semibold">{avgCalories.toFixed(0)} kcal</div>
+              <div className="mt-1 text-base font-semibold">{fmt0(avgCalories)} kcal</div>
             </div>
             <div className="rounded-2xl bg-gray-50 p-3">
               <div className="text-[11px] font-medium text-gray-600">เป้าหมาย/วัน</div>
@@ -256,21 +257,21 @@ export default async function DashboardPage(props: { searchParams?: { range?: st
                 <span className="h-2 w-2 rounded-sm bg-teal-600" aria-hidden="true" />
                 โปรตีน
               </div>
-              <div className="mt-1 text-base font-semibold">{rangeProteinG.toFixed(0)}g</div>
+              <div className="mt-1 text-base font-semibold">{fmt0(rangeProteinG)}g</div>
             </div>
             <div className="rounded-2xl bg-gray-50 p-3">
               <div className="flex items-center gap-2 text-[11px] font-medium text-gray-600">
                 <span className="h-2 w-2 rounded-sm bg-indigo-500" aria-hidden="true" />
                 คาร์บ
               </div>
-              <div className="mt-1 text-base font-semibold">{rangeCarbsG.toFixed(0)}g</div>
+              <div className="mt-1 text-base font-semibold">{fmt0(rangeCarbsG)}g</div>
             </div>
             <div className="rounded-2xl bg-gray-50 p-3">
               <div className="flex items-center gap-2 text-[11px] font-medium text-gray-600">
                 <span className="h-2 w-2 rounded-sm bg-amber-300" aria-hidden="true" />
                 ไขมัน
               </div>
-              <div className="mt-1 text-base font-semibold">{rangeFatG.toFixed(0)}g</div>
+              <div className="mt-1 text-base font-semibold">{fmt0(rangeFatG)}g</div>
             </div>
           </div>
         </div>
@@ -279,7 +280,7 @@ export default async function DashboardPage(props: { searchParams?: { range?: st
       <Card title="น้ำหนักปัจจุบัน">
         <div className="flex items-baseline justify-between">
           <div className="text-sm font-semibold text-gray-600">ล่าสุด</div>
-          <div className="text-3xl font-extrabold tracking-tight text-gray-900">{Number.isFinite(latestWeight) ? latestWeight.toFixed(1) : '-'} <span className="text-base font-extrabold text-gray-600">กก.</span></div>
+          <div className="text-3xl font-extrabold tracking-tight text-gray-900">{fmt1(latestWeight)} <span className="text-base font-extrabold text-gray-600">กก.</span></div>
         </div>
         <div className="mt-2">
           <Pill tone="muted">ไปหน้าชั่งน้ำหนักเพื่อแก้ไขย้อนหลัง</Pill>
@@ -289,7 +290,7 @@ export default async function DashboardPage(props: { searchParams?: { range?: st
       <Card title="BMI">
         <div className="space-y-3">
           <div className="flex items-baseline justify-between gap-2">
-            <div className="text-sm font-semibold text-gray-900">{Number.isFinite(bmi) ? bmi.toFixed(1) : '-'}</div>
+            <div className="text-sm font-semibold text-gray-900">{fmt1(bmi)}</div>
             <div className="text-xs font-semibold text-gray-700">{bmiLabel}</div>
           </div>
           <div className="relative h-4 w-full overflow-hidden rounded-full">

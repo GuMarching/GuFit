@@ -31,14 +31,14 @@
     {
       "userId": "local-user",
       "date": "2026-02-06",
-      "weightKg": 70,
+      "weightKg": 71,
       "id": "1770434609441-386a685cf8cc",
       "createdAt": "2026-02-07T03:23:29.441Z"
     },
     {
       "userId": "local-user",
       "date": "2026-02-07",
-      "weightKg": 79,
+      "weightKg": 70.5,
       "id": "1770434614490-3c06466f27466",
       "createdAt": "2026-02-07T03:23:34.490Z"
     }
