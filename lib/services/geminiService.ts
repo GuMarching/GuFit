@@ -208,6 +208,20 @@ const extractJsonObject = (raw: string): string | null => {
     }
   }
 
+  // Tolerate truncated JSON (common when model output is cut mid-object):
+  // If we saw an opening '{' but never reached depth 0, try to auto-close.
+  if (depth > 0) {
+    let candidate = s.slice(jsonStart);
+    // Remove trailing commas which would make JSON invalid.
+    candidate = candidate.replace(/,\s*$/m, '');
+    // If ends with an unterminated string quote, don't guess.
+    const trimmed = candidate.trimEnd();
+    if (trimmed.endsWith('"') || trimmed.endsWith("'")) {
+      // Still try to close braces; JSON.parse may fail and we'll fall back to retry/repair.
+    }
+    return `${candidate}}`;
+  }
+
   // Fallback: if braces are unbalanced but we still have a closing brace somewhere,
   // return the widest slice from first '{' to last '}'.
   const jsonEnd = s.lastIndexOf('}');
@@ -283,7 +297,7 @@ export const estimateFoodFromTextWithGemini = async (input: {
   for (const apiVersion of versionsToTry) {
     for (const modelId of candidates) {
       try {
-        raw = await callGenerateContent(apiKey, apiVersion, modelId, [{ text: prompt }], { maxOutputTokens: 512 });
+        raw = await callGenerateContent(apiKey, apiVersion, modelId, [{ text: prompt }], { maxOutputTokens: 2048 });
         try {
           const parsed = parseGeminiJsonFood(raw, input.text);
           cachedModelId = modelId;
@@ -296,7 +310,7 @@ export const estimateFoodFromTextWithGemini = async (input: {
             'ห้ามตอบค่า 0 ทั้งหมด; ถ้าไม่แน่ใจให้ประมาณค่าที่สมเหตุสมผล. ' +
             'schema: {"foodName":string,"calories":number,"protein":number,"fat":number,"carbs":number}. ' +
             `ข้อความผู้ใช้: ${input.text}`;
-          raw = await callGenerateContent(apiKey, apiVersion, modelId, [{ text: retryPrompt }], { maxOutputTokens: 256 });
+          raw = await callGenerateContent(apiKey, apiVersion, modelId, [{ text: retryPrompt }], { maxOutputTokens: 1024 });
 
           try {
             const parsed2 = parseGeminiJsonFood(raw, input.text);
@@ -310,11 +324,28 @@ export const estimateFoodFromTextWithGemini = async (input: {
               'แปลงข้อความต่อไปนี้ให้เป็น JSON object ที่ถูกต้อง 1 บรรทัดเท่านั้น โดยห้ามมี markdown/```/ข้อความอื่น. ' +
               'ต้องมี key: foodName, calories, protein, fat, carbs (ตัวเลขเป็น number). ห้ามตอบค่า 0 ทั้งหมด; ถ้าไม่แน่ใจให้ประมาณค่าที่สมเหตุสมผล. ' +
               `ข้อความ: ${snippet}`;
-            raw = await callGenerateContent(apiKey, apiVersion, modelId, [{ text: repairPrompt }], { maxOutputTokens: 256 });
-            const parsed3 = parseGeminiJsonFood(raw, input.text);
-            cachedModelId = modelId;
-            cachedApiVersion = apiVersion;
-            return parsed3;
+            raw = await callGenerateContent(apiKey, apiVersion, modelId, [{ text: repairPrompt }], { maxOutputTokens: 1024 });
+
+            try {
+              const parsed3 = parseGeminiJsonFood(raw, input.text);
+              cachedModelId = modelId;
+              cachedApiVersion = apiVersion;
+              return parsed3;
+            } catch {
+              const snippet2 = String(raw ?? '').trim().slice(0, 1200);
+              const repairPrompt2 =
+                'ตอบกลับเป็น JSON object 1 บรรทัดเท่านั้น (ห้ามมี markdown/```/คำอื่น). ' +
+                'ถ้าข้อมูลไม่พอให้ประมาณค่าแบบสมเหตุสมผล. ห้ามตอบไม่ครบ schema. ' +
+                'schema: {"foodName":string,"calories":number,"protein":number,"fat":number,"carbs":number}. ' +
+                `ข้อความ: ${snippet2}`;
+              raw = await callGenerateContent(apiKey, apiVersion, modelId, [{ text: repairPrompt2 }], {
+                maxOutputTokens: 1024,
+              });
+              const parsed4 = parseGeminiJsonFood(raw, input.text);
+              cachedModelId = modelId;
+              cachedApiVersion = apiVersion;
+              return parsed4;
+            }
           }
         }
       } catch (e: unknown) {

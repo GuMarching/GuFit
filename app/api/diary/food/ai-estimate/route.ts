@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 
 import { estimateFoodFromTextWithGemini } from '@/lib/services/geminiService';
 import { addFoodLog } from '@/lib/services/foodService';
-import { DEFAULT_USER_ID } from '@/lib/constants/defaults';
 import type { IsoDateString } from '@/types/domain';
+import { getUserIdOrRedirect } from '@/lib/supabase/auth';
 
 const isIsoDate = (v: string): v is IsoDateString => /^\d{4}-\d{2}-\d{2}$/.test(v);
 
@@ -45,8 +45,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ date, estimated });
     }
 
+    const userId = await getUserIdOrRedirect();
+
     await addFoodLog({
-      userId: DEFAULT_USER_ID,
+      userId,
       date,
       foodName: estimated.foodName,
       calories: estimated.calories,

@@ -6,6 +6,12 @@ export const listFoodLogsByDate = async (params: {
   date: IsoDateString;
 }): Promise<FoodLog[]> => repositories.food.listByDate(params);
 
+export const listFoodLogsByRange = async (params: {
+  userId: string;
+  from: IsoDateString;
+  to: IsoDateString;
+}): Promise<FoodLog[]> => repositories.food.listByRange(params);
+
 export const addFoodLog = async (input: Omit<FoodLog, 'id' | 'createdAt'>): Promise<FoodLog> =>
   repositories.food.create(input);
 

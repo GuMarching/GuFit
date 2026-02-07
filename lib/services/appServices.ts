@@ -25,6 +25,8 @@ export const repositories = {
   food: {
     listByDate: (...args: Parameters<typeof localFoodLogRepository.listByDate>) =>
       (isSupabaseEnabled() ? supabaseFoodLogRepository : localFoodLogRepository).listByDate(...args),
+    listByRange: (...args: Parameters<typeof localFoodLogRepository.listByRange>) =>
+      (isSupabaseEnabled() ? supabaseFoodLogRepository : localFoodLogRepository).listByRange(...args),
     create: (...args: Parameters<typeof localFoodLogRepository.create>) =>
       (isSupabaseEnabled() ? supabaseFoodLogRepository : localFoodLogRepository).create(...args),
     updateById: (...args: Parameters<typeof localFoodLogRepository.updateById>) =>

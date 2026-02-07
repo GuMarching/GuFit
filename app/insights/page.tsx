@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 
 import { Card, StatRow } from '@/components/ui';
 import { getUserProfile } from '@/lib/services/userService';
-import { listFoodLogsByDate } from '@/lib/services/foodService';
+import { listFoodLogsByRange } from '@/lib/services/foodService';
 import { listWeightLogs } from '@/lib/services/weightService';
 import { todayIsoDate } from '@/db/local/store';
 import { Sparkline } from '@/components/sparkline';
@@ -44,28 +44,53 @@ export default async function InsightsPage() {
   const today = todayIsoDate();
   const last7 = Array.from({ length: 7 }).map((_, i) => addDays(today, i - 6));
 
-  const foodByDay = await Promise.all(
-    last7.map(async (d) => {
-      const logs = await listFoodLogsByDate({ userId: profile.id, date: d as IsoDateString });
-      const proteinG = logs.reduce((s, l) => s + l.protein, 0);
-      const fatG = logs.reduce((s, l) => s + l.fat, 0);
-      const carbsG = logs.reduce((s, l) => s + l.carbs, 0);
-      const calories = logs.reduce((s, l) => s + l.calories, 0);
+  const from = last7[0] as IsoDateString;
+  const to = last7[last7.length - 1] as IsoDateString;
+  const logs = await listFoodLogsByRange({ userId: profile.id, from, to });
+  const totalsByDate = new Map<
+    string,
+    {
+      date: string;
+      calories: number;
+      proteinKcal: number;
+      fatKcal: number;
+      carbsKcal: number;
+      macroKcal: number;
+    }
+  >();
 
-      const proteinKcal = proteinG * 4;
-      const carbsKcal = carbsG * 4;
-      const fatKcal = fatG * 9;
-      const macroKcal = proteinKcal + carbsKcal + fatKcal;
+  for (const l of logs) {
+    const prev = totalsByDate.get(l.date) ?? {
+      date: l.date,
+      calories: 0,
+      proteinKcal: 0,
+      fatKcal: 0,
+      carbsKcal: 0,
+      macroKcal: 0,
+    };
 
-      return {
-        date: d,
-        calories,
-        proteinKcal,
-        fatKcal,
-        carbsKcal,
-        macroKcal,
-      };
-    }),
+    const proteinKcal = l.protein * 4;
+    const carbsKcal = l.carbs * 4;
+    const fatKcal = l.fat * 9;
+    totalsByDate.set(l.date, {
+      date: l.date,
+      calories: prev.calories + l.calories,
+      proteinKcal: prev.proteinKcal + proteinKcal,
+      fatKcal: prev.fatKcal + fatKcal,
+      carbsKcal: prev.carbsKcal + carbsKcal,
+      macroKcal: prev.macroKcal + (proteinKcal + carbsKcal + fatKcal),
+    });
+  }
+
+  const foodByDay = last7.map((d) =>
+    totalsByDate.get(d) ?? {
+      date: d,
+      calories: 0,
+      proteinKcal: 0,
+      fatKcal: 0,
+      carbsKcal: 0,
+      macroKcal: 0,
+    },
   );
 
   const avgCalories =

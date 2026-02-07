@@ -11,6 +11,7 @@ export type UserRepository = {
 
 export type FoodLogRepository = {
   listByDate: (params: { userId: string; date: IsoDateString }) => Promise<FoodLog[]>;
+  listByRange: (params: { userId: string; from: IsoDateString; to: IsoDateString }) => Promise<FoodLog[]>;
   create: (input: Omit<FoodLog, 'id' | 'createdAt'>) => Promise<FoodLog>;
   updateById: (input: {
     userId: string;

@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 
 import { Card } from '@/components/ui';
 import { calculateBmr, calculateDailyCalorieTarget, calculateTdee } from '@/lib/calculations/metabolism';
-import { listFoodLogsByDate } from '@/lib/services/foodService';
+import { listFoodLogsByRange } from '@/lib/services/foodService';
 import { getUserProfile } from '@/lib/services/userService';
 import { listWeightLogs } from '@/lib/services/weightService';
 import { todayIsoDate } from '@/db/local/store';
@@ -71,30 +71,41 @@ export default async function DashboardPage(props: { searchParams?: { range?: st
     }
   >();
 
-  const datesToFetch = rangeDates ?? [date];
-  await Promise.all(
-    datesToFetch.map(async (d) => {
-      const logs = await listFoodLogsByDate({ userId: profile.id, date: d as IsoDateString });
-      const proteinG = logs.reduce((s, l) => s + l.protein, 0);
-      const fatG = logs.reduce((s, l) => s + l.fat, 0);
-      const carbsG = logs.reduce((s, l) => s + l.carbs, 0);
-      const calories = logs.reduce((s, l) => s + l.calories, 0);
+  const from = (rangeDates ? rangeDates[0] : '2000-01-01') as IsoDateString;
+  const to = (rangeDates ? rangeDates[rangeDates.length - 1] : date) as IsoDateString;
+  const rangeLogs = await listFoodLogsByRange({ userId: profile.id, from, to });
 
-      const proteinKcal = proteinG * 4;
-      const carbsKcal = carbsG * 4;
-      const fatKcal = fatG * 9;
-      const macroKcal = proteinKcal + carbsKcal + fatKcal;
-
-      totalsByDate.set(d, {
-        date: d,
-        calories,
-        proteinKcal,
-        carbsKcal,
-        fatKcal,
-        macroKcal,
+  for (const l of rangeLogs) {
+    const prev =
+      totalsByDate.get(l.date) ??
+      ({
+        date: l.date,
+        calories: 0,
+        proteinKcal: 0,
+        carbsKcal: 0,
+        fatKcal: 0,
+        macroKcal: 0,
+      } satisfies {
+        date: string;
+        calories: number;
+        proteinKcal: number;
+        carbsKcal: number;
+        fatKcal: number;
+        macroKcal: number;
       });
-    }),
-  );
+
+    const proteinKcal = l.protein * 4;
+    const carbsKcal = l.carbs * 4;
+    const fatKcal = l.fat * 9;
+    totalsByDate.set(l.date, {
+      date: l.date,
+      calories: prev.calories + l.calories,
+      proteinKcal: prev.proteinKcal + proteinKcal,
+      carbsKcal: prev.carbsKcal + carbsKcal,
+      fatKcal: prev.fatKcal + fatKcal,
+      macroKcal: prev.macroKcal + (proteinKcal + carbsKcal + fatKcal),
+    });
+  }
 
   const foodByDay = (rangeDates
     ? rangeDates.map((d) => totalsByDate.get(d) ?? { date: d, calories: 0, proteinKcal: 0, carbsKcal: 0, fatKcal: 0, macroKcal: 0 })

@@ -46,6 +46,14 @@ export const localFoodLogRepository: FoodLogRepository = {
       .filter((l) => l.userId === params.userId && l.date === params.date)
       .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
   },
+  listByRange: async (params) => {
+    const db = await readLocalDb();
+    const from = String(params.from);
+    const to = String(params.to);
+    return db.foodLogs
+      .filter((l) => l.userId === params.userId && l.date >= from && l.date <= to)
+      .sort((a, b) => (a.date === b.date ? (a.createdAt > b.createdAt ? 1 : -1) : a.date > b.date ? 1 : -1));
+  },
   create: async (input) => {
     const db = await readLocalDb();
     const created: FoodLog = {

@@ -181,6 +181,20 @@ export const supabaseFoodLogRepository: FoodLogRepository = {
     return (data ?? []).map(mapFoodLog);
   },
 
+  async listByRange({ userId, from, to }) {
+    const sb = await getSupabaseClient();
+    const { data, error } = await sb
+      .from('food_logs')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('date', from)
+      .lte('date', to)
+      .order('date', { ascending: true })
+      .order('created_at', { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(mapFoodLog);
+  },
+
   async create(input) {
     const sb = await getSupabaseClient();
     const payload = {
