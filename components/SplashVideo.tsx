@@ -37,7 +37,7 @@ export default function SplashVideo(props: {
   if (!open || blocked) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] grid place-items-center bg-black">
+    <div className="fixed inset-0 z-[100] grid place-items-center bg-white">
       <video
         ref={videoRef}
         src={src}
