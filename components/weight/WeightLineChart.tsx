@@ -72,7 +72,6 @@ export default function WeightLineChart(props: {
   const activeI = hoverI == null ? points.length - 1 : hoverI;
   const active = points[activeI]!;
   const activeX = toX(activeI);
-  const activeY = toY(active.weightKg);
 
   const grid = [1, 0.75, 0.5, 0.25, 0].map((p) => {
     const v = chartMin + chartRange * p;
