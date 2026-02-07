@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { addFoodLog } from '@/lib/services/foodService';
 import { DEFAULT_USER_ID } from '@/lib/constants/defaults';
 import type { IsoDateString } from '@/types/domain';
+import { isSupabaseEnabled } from '@/lib/supabase/client';
+import { getUserIdOrRedirect } from '@/lib/supabase/auth';
 
 const isIsoDate = (v: string): v is IsoDateString => /^\d{4}-\d{2}-\d{2}$/.test(v);
 
@@ -37,15 +39,22 @@ export async function POST(request: Request) {
     );
   }
 
-  await addFoodLog({
-    userId: DEFAULT_USER_ID,
-    date,
-    foodName,
-    calories: Number(calories),
-    protein: Number(protein),
-    fat: Number(fat),
-    carbs: Number(carbs),
-  });
+  try {
+    const userId = isSupabaseEnabled() ? await getUserIdOrRedirect() : DEFAULT_USER_ID;
 
-  return NextResponse.redirect(new URL(`/diary?date=${date}`, getRequestOrigin(request)));
+    await addFoodLog({
+      userId,
+      date,
+      foodName,
+      calories: Number(calories),
+      protein: Number(protein),
+      fat: Number(fat),
+      carbs: Number(carbs),
+    });
+
+    return NextResponse.redirect(new URL(`/diary?date=${date}`, getRequestOrigin(request)));
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e ?? 'บันทึกไม่สำเร็จ');
+    return NextResponse.redirect(new URL(`/diary?date=${date}&err=${encodeURIComponent(msg)}`, getRequestOrigin(request)));
+  }
 }
