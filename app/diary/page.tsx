@@ -1,9 +1,13 @@
 import { redirect } from 'next/navigation';
 
-import { Card, Field, Input, Button, DangerButton, Progress, StatRow } from '@/components/ui';
+import { Card, Field, Input, Progress, StatRow } from '@/components/ui';
+import SubmitSecondaryButton from '@/components/SubmitSecondaryButton';
+import SubmitDangerButton from '@/components/SubmitDangerButton';
 import { getUserProfile } from '@/lib/services/userService';
 import { listFoodLogsByDate } from '@/lib/services/foodService';
 import { listExerciseLogsByDate } from '@/lib/services/exerciseService';
+import { deleteFoodLog, updateFoodLog } from '@/lib/services/foodService';
+import { deleteExerciseLog, updateExerciseLog } from '@/lib/services/exerciseService';
 import { todayIsoDate } from '@/db/local/store';
 import { calculateBmr, calculateDailyCalorieTarget, calculateTdee } from '@/lib/calculations/metabolism';
 import { DiaryDateNav } from '@/components/diary/DiaryDateNav';
@@ -48,10 +52,80 @@ export default async function DiaryPage(props: { searchParams?: { date?: string;
   const fat = foodLogs.reduce((sum, l) => sum + l.fat, 0);
   const carbs = foodLogs.reduce((sum, l) => sum + l.carbs, 0);
 
+  const proteinTarget = Math.round((target * 0.3) / 4);
+  const carbsTarget = Math.round((target * 0.45) / 4);
+  const fatTarget = Math.round((target * 0.25) / 9);
+  const proteinLeft = proteinTarget - protein;
+  const carbsLeft = carbsTarget - carbs;
+  const fatLeft = fatTarget - fat;
+
+  const updateFood = async (formData: FormData) => {
+    'use server';
+    const id = formData.get('id');
+    const foodName = formData.get('foodName');
+    const calories = formData.get('calories');
+    const proteinV = formData.get('protein');
+    const fatV = formData.get('fat');
+    const carbsV = formData.get('carbs');
+    if (
+      typeof id !== 'string' ||
+      typeof foodName !== 'string' ||
+      typeof calories !== 'string' ||
+      typeof proteinV !== 'string' ||
+      typeof fatV !== 'string' ||
+      typeof carbsV !== 'string'
+    ) {
+      redirect(`/diary?date=${date}&err=${encodeURIComponent('ข้อมูลไม่ถูกต้อง')}`);
+    }
+    await updateFoodLog({
+      userId: profile.id,
+      id,
+      foodName,
+      calories: Number(calories),
+      protein: Number(proteinV),
+      fat: Number(fatV),
+      carbs: Number(carbsV),
+    });
+    redirect(`/diary?date=${date}`);
+  };
+
+  const removeFood = async (formData: FormData) => {
+    'use server';
+    const id = formData.get('id');
+    if (typeof id !== 'string') redirect(`/diary?date=${date}&err=${encodeURIComponent('ข้อมูลไม่ถูกต้อง')}`);
+    await deleteFoodLog({ userId: profile.id, id });
+    redirect(`/diary?date=${date}`);
+  };
+
+  const updateExercise = async (formData: FormData) => {
+    'use server';
+    const id = formData.get('id');
+    const name = formData.get('name');
+    const caloriesBurned = formData.get('caloriesBurned');
+    if (typeof id !== 'string' || typeof name !== 'string' || typeof caloriesBurned !== 'string') {
+      redirect(`/diary?date=${date}&err=${encodeURIComponent('ข้อมูลไม่ถูกต้อง')}`);
+    }
+    await updateExerciseLog({
+      userId: profile.id,
+      id,
+      name,
+      caloriesBurned: Number(caloriesBurned),
+    });
+    redirect(`/diary?date=${date}`);
+  };
+
+  const removeExercise = async (formData: FormData) => {
+    'use server';
+    const id = formData.get('id');
+    if (typeof id !== 'string') redirect(`/diary?date=${date}&err=${encodeURIComponent('ข้อมูลไม่ถูกต้อง')}`);
+    await deleteExerciseLog({ userId: profile.id, id });
+    redirect(`/diary?date=${date}`);
+  };
+
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">ไดอารี่</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">ไดอารี่</h1>
         <div className="mt-2">
           <DiaryDateNav date={date} />
         </div>
@@ -69,17 +143,17 @@ export default async function DiaryPage(props: { searchParams?: { date?: string;
       <Card title="สรุปวันนี้">
         <div className="space-y-3">
           <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-2xl bg-gray-50 p-3">
-              <div className="text-[11px] font-medium text-gray-600">เป้าหมาย</div>
-              <div className="mt-1 text-lg font-semibold">{target}</div>
+            <div className="rounded-3xl border border-gray-100 bg-gray-50/80 p-3 shadow-sm">
+              <div className="text-[11px] font-semibold text-gray-600">เป้าหมาย</div>
+              <div className="mt-1 text-xl font-extrabold text-gray-900">{target}</div>
             </div>
-            <div className="rounded-2xl bg-gray-50 p-3">
-              <div className="text-[11px] font-medium text-gray-600">สุทธิ</div>
-              <div className="mt-1 text-lg font-semibold">{net}</div>
+            <div className="rounded-3xl border border-gray-100 bg-gray-50/80 p-3 shadow-sm">
+              <div className="text-[11px] font-semibold text-gray-600">สุทธิ</div>
+              <div className="mt-1 text-xl font-extrabold text-gray-900">{net}</div>
             </div>
-            <div className="rounded-2xl bg-gray-50 p-3">
-              <div className="text-[11px] font-medium text-gray-600">คงเหลือ</div>
-              <div className={left >= 0 ? 'mt-1 text-lg font-semibold text-green-700' : 'mt-1 text-lg font-semibold text-red-700'}>
+            <div className="rounded-3xl border border-gray-100 bg-gray-50/80 p-3 shadow-sm">
+              <div className="text-[11px] font-semibold text-gray-600">คงเหลือ</div>
+              <div className={left >= 0 ? 'mt-1 text-xl font-extrabold text-teal-800' : 'mt-1 text-xl font-extrabold text-rose-700'}>
                 {left}
               </div>
             </div>
@@ -88,17 +162,26 @@ export default async function DiaryPage(props: { searchParams?: { date?: string;
           <Progress value={net} max={target} />
 
           <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-2xl bg-gray-50 p-3">
-              <div className="text-[11px] font-medium text-gray-600">โปรตีน</div>
-              <div className="mt-1 text-base font-semibold">{protein}g</div>
+            <div className="rounded-3xl border border-gray-100 bg-gray-50/80 p-3 shadow-sm">
+              <div className="text-[11px] font-semibold text-gray-600">โปรตีนคงเหลือ</div>
+              <div className={proteinLeft >= 0 ? 'mt-1 text-base font-extrabold text-teal-800' : 'mt-1 text-base font-extrabold text-rose-700'}>
+                {proteinLeft}g
+              </div>
+              <div className="mt-1 text-[11px] font-semibold text-gray-600">กิน {protein} / {proteinTarget}g</div>
             </div>
-            <div className="rounded-2xl bg-gray-50 p-3">
-              <div className="text-[11px] font-medium text-gray-600">ไขมัน</div>
-              <div className="mt-1 text-base font-semibold">{fat}g</div>
+            <div className="rounded-3xl border border-gray-100 bg-gray-50/80 p-3 shadow-sm">
+              <div className="text-[11px] font-semibold text-gray-600">ไขมันคงเหลือ</div>
+              <div className={fatLeft >= 0 ? 'mt-1 text-base font-extrabold text-teal-800' : 'mt-1 text-base font-extrabold text-rose-700'}>
+                {fatLeft}g
+              </div>
+              <div className="mt-1 text-[11px] font-semibold text-gray-600">กิน {fat} / {fatTarget}g</div>
             </div>
-            <div className="rounded-2xl bg-gray-50 p-3">
-              <div className="text-[11px] font-medium text-gray-600">คาร์บ</div>
-              <div className="mt-1 text-base font-semibold">{carbs}g</div>
+            <div className="rounded-3xl border border-gray-100 bg-gray-50/80 p-3 shadow-sm">
+              <div className="text-[11px] font-semibold text-gray-600">คาร์บคงเหลือ</div>
+              <div className={carbsLeft >= 0 ? 'mt-1 text-base font-extrabold text-teal-800' : 'mt-1 text-base font-extrabold text-rose-700'}>
+                {carbsLeft}g
+              </div>
+              <div className="mt-1 text-[11px] font-semibold text-gray-600">กิน {carbs} / {carbsTarget}g</div>
             </div>
           </div>
 
@@ -125,8 +208,7 @@ export default async function DiaryPage(props: { searchParams?: { date?: string;
 
                   <details className="mt-2">
                     <summary className="cursor-pointer text-xs font-semibold text-gray-700">แก้ไข</summary>
-                    <form action="/api/diary/food/update" method="post" className="mt-2 space-y-2">
-                      <input type="hidden" name="date" value={date} />
+                    <form action={updateFood} className="mt-2 space-y-2">
                       <input type="hidden" name="id" value={l.id} />
                       <Field label="ชื่ออาหาร">
                         <Input name="foodName" defaultValue={l.foodName} required />
@@ -145,16 +227,15 @@ export default async function DiaryPage(props: { searchParams?: { date?: string;
                           <Input name="carbs" type="number" min={0} step="any" defaultValue={String(l.carbs)} required />
                         </Field>
                       </div>
-                      <Button type="submit">บันทึกการแก้ไข</Button>
+                      <SubmitSecondaryButton loadingText="กำลังบันทึก…">บันทึกการแก้ไข</SubmitSecondaryButton>
                     </form>
                   </details>
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <form action="/api/diary/food/delete" method="post">
-                    <input type="hidden" name="date" value={date} />
+                  <form action={removeFood}>
                     <input type="hidden" name="id" value={l.id} />
-                    <DangerButton type="submit">ลบ</DangerButton>
+                    <SubmitDangerButton loadingText="กำลังลบ…">ลบ</SubmitDangerButton>
                   </form>
                 </div>
               </li>
@@ -176,8 +257,7 @@ export default async function DiaryPage(props: { searchParams?: { date?: string;
 
                   <details className="mt-2">
                     <summary className="cursor-pointer text-xs font-semibold text-gray-700">แก้ไข</summary>
-                    <form action="/api/diary/exercise/update" method="post" className="mt-2 space-y-2">
-                      <input type="hidden" name="date" value={date} />
+                    <form action={updateExercise} className="mt-2 space-y-2">
                       <input type="hidden" name="id" value={l.id} />
                       <Field label="กิจกรรม">
                         <Input name="name" defaultValue={l.name} required />
@@ -185,16 +265,15 @@ export default async function DiaryPage(props: { searchParams?: { date?: string;
                       <Field label="แคลอรี่ที่เผาผลาญ (kcal)">
                         <Input name="caloriesBurned" type="number" min={0} step="any" defaultValue={String(l.caloriesBurned)} required />
                       </Field>
-                      <Button type="submit">บันทึกการแก้ไข</Button>
+                      <SubmitSecondaryButton loadingText="กำลังบันทึก…">บันทึกการแก้ไข</SubmitSecondaryButton>
                     </form>
                   </details>
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <form action="/api/diary/exercise/delete" method="post">
-                    <input type="hidden" name="date" value={date} />
+                  <form action={removeExercise}>
                     <input type="hidden" name="id" value={l.id} />
-                    <DangerButton type="submit">ลบ</DangerButton>
+                    <SubmitDangerButton loadingText="กำลังลบ…">ลบ</SubmitDangerButton>
                   </form>
                 </div>
               </li>

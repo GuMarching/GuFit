@@ -11,8 +11,8 @@ export const Sparkline = (props: {
 }) => {
   const width = props.width ?? 240;
   const height = props.height ?? 64;
-  const stroke = props.stroke ?? '#059669';
-  const strokeWidth = props.strokeWidth ?? 2;
+  const stroke = props.stroke ?? '#0f766e';
+  const strokeWidth = props.strokeWidth ?? 2.75;
 
   const values = props.values.filter((v) => Number.isFinite(v));
   if (values.length < 2) {
@@ -40,6 +40,15 @@ export const Sparkline = (props: {
       style={props.style}
       aria-hidden
     >
+      <polyline
+        points={points}
+        fill="none"
+        stroke="#99f6e4"
+        strokeWidth={strokeWidth + 2}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        opacity={0.9}
+      />
       <polyline points={points} fill="none" stroke={stroke} strokeWidth={strokeWidth} strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   );

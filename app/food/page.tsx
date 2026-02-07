@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 
-import { Card, Field, Input, Button, DangerButton } from '@/components/ui';
+import { Card, Field, Input, DangerButton } from '@/components/ui';
+import SubmitButton from '@/components/SubmitButton';
 import { addFoodLog, deleteFoodLog, listFoodLogsByDate } from '@/lib/services/foodService';
 import { getUserProfile } from '@/lib/services/userService';
 import { getUserIdOrRedirect } from '@/lib/supabase/auth';
@@ -84,7 +85,7 @@ export default async function FoodPage() {
                 <Input name="carbs" type="number" min={0} step="0.1" required />
               </Field>
             </div>
-            <Button type="submit">เพิ่ม</Button>
+            <SubmitButton loadingText="กำลังเพิ่ม…">เพิ่ม</SubmitButton>
           </form>
         </Card>
 

@@ -6,6 +6,9 @@ type SupabaseEnv = {
 };
 
 export const readSupabaseEnv = (): SupabaseEnv | null => {
+  const forceLocal = process.env.NEXT_PUBLIC_FORCE_LOCAL;
+  if (forceLocal === '1' || forceLocal === 'true') return null;
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anonKey) return null;

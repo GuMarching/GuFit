@@ -147,9 +147,9 @@ export default async function InsightsPage() {
                   <div key={d.date} className="flex w-full flex-col items-center gap-2">
                     <div className="w-full max-w-[32px]">
                       <div className="flex h-[120px] w-full flex-col justify-end rounded-2xl bg-gray-50 p-1">
-                        <div className="w-full rounded-xl bg-yellow-400" style={{ height: fatH }} />
-                        <div className="mt-1 w-full rounded-xl bg-emerald-500" style={{ height: proteinH }} />
-                        <div className="mt-1 w-full rounded-xl bg-sky-500" style={{ height: carbsH }} />
+                        <div className="w-full rounded-xl bg-amber-300/85 ring-1 ring-inset ring-black/5" style={{ height: fatH }} />
+                        <div className="mt-1 w-full rounded-xl bg-teal-600/85 ring-1 ring-inset ring-black/5" style={{ height: proteinH }} />
+                        <div className="mt-1 w-full rounded-xl bg-indigo-500/85 ring-1 ring-inset ring-black/5" style={{ height: carbsH }} />
                       </div>
                     </div>
                     <div className="text-center">
@@ -226,9 +226,9 @@ export default async function InsightsPage() {
 
           <div className="rounded-2xl border bg-white p-4">
             <div className="relative h-4 w-full overflow-hidden rounded-full">
-              <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-amber-400 to-emerald-500" />
+              <div className="absolute inset-0 bg-gradient-to-r from-rose-400 via-amber-300 to-teal-400" />
               <div
-                className="absolute top-1/2 h-6 w-6 -translate-y-1/2 rounded-full border-2 border-white bg-gray-900 shadow"
+                className="absolute top-1/2 h-6 w-6 -translate-y-1/2 rounded-full border-2 border-white bg-gray-900 shadow ring-2 ring-white/70"
                 style={{ left: `calc(${(bmiPos * 100).toFixed(2)}% - 12px)` }}
                 aria-label="ตำแหน่ง BMI"
               />

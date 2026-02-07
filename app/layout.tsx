@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 
 import { BottomNav } from '@/components/BottomNav';
+import { HeaderRight } from '@/components/header/HeaderRight';
 
 export const metadata = {
   title: 'GuFit - แอพนับแคลอรี่',
@@ -13,14 +14,16 @@ export const metadata = {
 export default function RootLayout(props: { children: ReactNode }) {
   return (
     <html lang="th">
-      <body className="min-h-dvh bg-gray-50">
-        <div className="mx-auto min-h-dvh w-full max-w-md bg-gray-50">
-          <header className="sticky top-0 z-10 border-b bg-white/90 backdrop-blur">
+      <body className="min-h-dvh">
+        <div className="mx-auto min-h-dvh w-full max-w-md bg-transparent">
+          <header className="sticky top-0 z-10 border-b border-gray-100 bg-white/80 backdrop-blur">
             <div className="flex items-center justify-between px-4 py-3">
-              <Link href="/dashboard" className="text-base font-semibold tracking-tight text-gray-900">
+              <Link href="/dashboard" className="text-lg font-extrabold tracking-tight text-gray-900">
                 GuFit
               </Link>
-              <div className="text-sm font-medium text-gray-700"> </div>
+              <Suspense fallback={<div className="h-9 w-9" />}>
+                <HeaderRight />
+              </Suspense>
             </div>
           </header>
 

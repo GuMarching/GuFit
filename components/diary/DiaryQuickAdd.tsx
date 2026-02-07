@@ -33,6 +33,56 @@ type DetectedFood = {
   unitOptions: string[];
 };
 
+const Spinner = (props: { className?: string }) => (
+  <svg viewBox="0 0 24 24" className={`h-4 w-4 animate-spin ${props.className ?? ''}`} fill="none" aria-hidden="true">
+    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v3a5 5 0 0 0-5 5H4z" />
+  </svg>
+);
+
+const DiaryQuickAddSheet = (p: { title: string; onClose: () => void; children: ReactNode }) => {
+  const navBottom = 'calc(72px + env(safe-area-inset-bottom))';
+  return (
+    <div className="fixed inset-0 z-50">
+      <button
+        type="button"
+        className="absolute left-0 right-0 top-0 bg-black/30"
+        style={{ bottom: navBottom }}
+        onClick={p.onClose}
+        aria-label="ปิด"
+      />
+      <div
+        className="absolute left-0 right-0 mx-auto w-full max-w-md rounded-t-3xl border border-gray-100 bg-white/90 p-4 shadow-2xl backdrop-blur overscroll-contain"
+        style={{ bottom: navBottom }}
+      >
+        <div className="mb-3 flex items-center justify-between">
+          <div className="text-base font-extrabold tracking-tight text-gray-900">{p.title}</div>
+          <button
+            type="button"
+            onClick={p.onClose}
+            className="rounded-full border border-gray-200 bg-white px-3 py-2 text-sm font-extrabold text-gray-900 shadow-sm transition hover:bg-gray-50 active:translate-y-px active:scale-[0.99]"
+          >
+            ปิด
+          </button>
+        </div>
+        <div className="max-h-[75vh] overflow-auto overscroll-contain">{p.children}</div>
+      </div>
+    </div>
+  );
+};
+
+const TileIconWrap = (p: { children: ReactNode }) => (
+  <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-3xl border border-gray-100 bg-white shadow-sm">
+    {p.children}
+  </div>
+);
+
+const tileCls =
+  'group rounded-3xl border border-gray-100 bg-white/80 px-4 py-5 text-center text-sm font-extrabold text-gray-900 shadow-sm transition hover:bg-white active:translate-y-px active:scale-[0.99] disabled:opacity-60';
+
+const tileIconCls =
+  'h-6 w-6 stroke-gray-700 transition-colors group-hover:stroke-teal-700 group-focus-visible:stroke-teal-700';
+
 export const DiaryQuickAdd = (props: {
   geminiEnabled: boolean;
   date: string;
@@ -262,78 +312,51 @@ export const DiaryQuickAdd = (props: {
     }
   };
 
-  const Sheet = (p: { title: string; children: ReactNode }) => {
-    const navBottom = 'calc(72px + env(safe-area-inset-bottom))';
-    return (
-      <div className="fixed inset-0 z-50">
-        <button
-          type="button"
-          className="absolute left-0 right-0 top-0 bg-black/30"
-          style={{ bottom: navBottom }}
-          onClick={close}
-          aria-label="ปิด"
-        />
-        <div
-          className="absolute left-0 right-0 mx-auto w-full max-w-md rounded-t-3xl border bg-white p-4 shadow-2xl overscroll-contain"
-          style={{ bottom: navBottom }}
-        >
-        <div className="mb-3 flex items-center justify-between">
-          <div className="text-base font-semibold">{p.title}</div>
-          <button type="button" onClick={close} className="rounded-xl border bg-white px-3 py-2 text-sm font-semibold shadow-sm">
-            ปิด
-          </button>
-        </div>
-        <div className="max-h-[75vh] overflow-auto overscroll-contain">{p.children}</div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <>
       {open ? (
         mode === 'menu' ? (
-          <Sheet title="เพิ่มรายการ">
+          <DiaryQuickAddSheet title="เพิ่มรายการ" onClose={close}>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                className="rounded-2xl border bg-amber-50 px-4 py-5 text-center text-sm font-semibold"
+                className={tileCls}
                 onClick={() => setMode('ai_photo')}
                 disabled={!props.geminiEnabled}
               >
-                <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm">
-                  <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 stroke-amber-600" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <TileIconWrap>
+                  <svg viewBox="0 0 24 24" fill="none" className={tileIconCls} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M4 7h4l2-2h4l2 2h4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z" />
                     <path d="M12 17a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
                   </svg>
-                </div>
+                </TileIconWrap>
                 สแกนอาหาร
               </button>
 
               <button
                 type="button"
-                className="rounded-2xl border bg-orange-50 px-4 py-5 text-center text-sm font-semibold"
+                className={tileCls}
                 onClick={() => setMode('ai_food')}
               >
-                <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm">
-                  <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 stroke-orange-600" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <TileIconWrap>
+                  <svg viewBox="0 0 24 24" fill="none" className={tileIconCls} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M6 4h12a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
                     <path d="M8 8h8" />
                     <path d="M8 12h8" />
                     <path d="M8 16h6" />
                   </svg>
-                </div>
+                </TileIconWrap>
                 ค้นหาอาหาร
               </button>
 
               <button
                 type="button"
-                className="rounded-2xl border bg-rose-50 px-4 py-5 text-center text-sm font-semibold"
+                className={tileCls}
                 onClick={() => setMode('exercise_ai')}
                 disabled={!props.geminiEnabled}
               >
-                <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm">
-                  <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 stroke-rose-600" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <TileIconWrap>
+                  <svg viewBox="0 0 24 24" fill="none" className={tileIconCls} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M6 12h12" />
                     <path d="M7 8h2" />
                     <path d="M15 8h2" />
@@ -341,31 +364,31 @@ export const DiaryQuickAdd = (props: {
                     <path d="M15 16h2" />
                     <path d="M9 8l6 8" />
                   </svg>
-                </div>
+                </TileIconWrap>
                 บันทึกกิจกรรม
               </button>
 
               <button
                 type="button"
-                className="rounded-2xl border bg-emerald-50 px-4 py-5 text-center text-sm font-semibold"
+                className={tileCls}
                 onClick={() => setMode('food_manual')}
               >
-                <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm">
-                  <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 stroke-emerald-700" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <TileIconWrap>
+                  <svg viewBox="0 0 24 24" fill="none" className={tileIconCls} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 20h9" />
                     <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
                   </svg>
-                </div>
+                </TileIconWrap>
                 บันทึกด่วน
               </button>
             </div>
-          </Sheet>
+          </DiaryQuickAddSheet>
         ) : mode === 'food' ? (
-          <Sheet title="เพิ่มอาหาร">
+          <DiaryQuickAddSheet title="เพิ่มอาหาร" onClose={close}>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                className="rounded-2xl border bg-white px-4 py-4 text-left text-sm font-semibold"
+                className="rounded-3xl border border-gray-100 bg-white/80 px-4 py-5 text-left text-sm font-extrabold text-gray-900 shadow-sm transition hover:bg-white active:translate-y-px active:scale-[0.99]"
                 onClick={() => setMode('food_manual')}
               >
                 เพิ่มอาหารด้วยตัวเอง
@@ -373,7 +396,7 @@ export const DiaryQuickAdd = (props: {
               </button>
               <button
                 type="button"
-                className="rounded-2xl border bg-white px-4 py-4 text-left text-sm font-semibold"
+                className="rounded-3xl border border-gray-100 bg-white/80 px-4 py-5 text-left text-sm font-extrabold text-gray-900 shadow-sm transition hover:bg-white active:translate-y-px active:scale-[0.99]"
                 onClick={() => setMode('food_catalog')}
               >
                 เลือกจากรายการ
@@ -381,7 +404,7 @@ export const DiaryQuickAdd = (props: {
               </button>
               <button
                 type="button"
-                className="col-span-2 rounded-2xl border bg-white px-4 py-4 text-left text-sm font-semibold"
+                className="col-span-2 rounded-3xl border border-teal-100 bg-teal-50/60 px-4 py-5 text-left text-sm font-extrabold text-gray-900 shadow-sm transition hover:bg-teal-50 active:translate-y-px active:scale-[0.99] disabled:opacity-60"
                 onClick={() => setMode('food_ai')}
                 disabled={!props.geminiEnabled}
               >
@@ -389,46 +412,99 @@ export const DiaryQuickAdd = (props: {
                 <div className="mt-1 text-xs font-medium text-gray-600">ข้อความ หรือ รูปภาพ</div>
               </button>
             </div>
-          </Sheet>
+          </DiaryQuickAddSheet>
         ) : mode === 'food_ai' ? (
-          <Sheet title="เพิ่มอาหารด้วย AI">
+          <DiaryQuickAddSheet title="เพิ่มอาหารด้วย AI" onClose={close}>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                className="rounded-2xl border bg-white px-4 py-4 text-left text-sm font-semibold"
+                className={tileCls.replace('text-center', 'text-left')}
                 onClick={() => setMode('ai_food')}
                 disabled={!props.geminiEnabled}
               >
+                <TileIconWrap>
+                  <svg viewBox="0 0 24 24" fill="none" className={tileIconCls} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 4h12a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+                    <path d="M8 8h8" />
+                    <path d="M8 12h8" />
+                    <path d="M8 16h6" />
+                  </svg>
+                </TileIconWrap>
                 AI ข้อความ
-                <div className="mt-1 text-xs font-medium text-gray-600">พิมพ์ข้อความ</div>
+                <div className="mt-1 text-xs font-medium text-gray-600">พิมพ์รายละเอียดอาหาร</div>
               </button>
               <button
                 type="button"
-                className="rounded-2xl border bg-white px-4 py-4 text-left text-sm font-semibold"
+                className={tileCls.replace('text-center', 'text-left')}
                 onClick={() => setMode('ai_photo')}
                 disabled={!props.geminiEnabled}
               >
+                <TileIconWrap>
+                  <svg viewBox="0 0 24 24" fill="none" className={tileIconCls} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 7h4l2-2h4l2 2h4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z" />
+                    <path d="M12 17a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
+                  </svg>
+                </TileIconWrap>
                 AI รูปภาพ
-                <div className="mt-1 text-xs font-medium text-gray-600">ถ่ายรูปอาหาร</div>
+                <div className="mt-1 text-xs font-medium text-gray-600">ถ่ายรูปหรือเลือกรูป</div>
               </button>
             </div>
-          </Sheet>
+          </DiaryQuickAddSheet>
         ) : mode === 'food_manual' ? (
-          <Sheet title="เพิ่มอาหาร (กรอกเอง)">
+          <DiaryQuickAddSheet title="เพิ่มอาหาร (กรอกเอง)" onClose={close}>
             <form action="/api/diary/food/add" method="post" className="space-y-3">
               <input type="hidden" name="date" value={props.date} />
-              <input name="foodName" placeholder="ชื่ออาหาร" className="w-full rounded-xl border px-3 py-2 text-sm" required />
+              <input
+                name="foodName"
+                placeholder="ชื่ออาหาร"
+                className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-600/20"
+                required
+              />
               <div className="grid grid-cols-2 gap-3">
-                <input name="calories" type="number" min={0} step="any" placeholder="แคลอรี่" className="w-full rounded-xl border px-3 py-2 text-sm" required />
-                <input name="protein" type="number" min={0} step="any" placeholder="โปรตีน (g)" className="w-full rounded-xl border px-3 py-2 text-sm" required />
-                <input name="fat" type="number" min={0} step="any" placeholder="ไขมัน (g)" className="w-full rounded-xl border px-3 py-2 text-sm" required />
-                <input name="carbs" type="number" min={0} step="any" placeholder="คาร์บ (g)" className="w-full rounded-xl border px-3 py-2 text-sm" required />
+                <input
+                  name="calories"
+                  type="number"
+                  min={0}
+                  step="any"
+                  placeholder="แคลอรี่"
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-600/20"
+                  required
+                />
+                <input
+                  name="protein"
+                  type="number"
+                  min={0}
+                  step="any"
+                  placeholder="โปรตีน (g)"
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-600/20"
+                  required
+                />
+                <input
+                  name="fat"
+                  type="number"
+                  min={0}
+                  step="any"
+                  placeholder="ไขมัน (g)"
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-600/20"
+                  required
+                />
+                <input
+                  name="carbs"
+                  type="number"
+                  min={0}
+                  step="any"
+                  placeholder="คาร์บ (g)"
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-600/20"
+                  required
+                />
               </div>
-              <button className="w-full rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white">เพิ่ม</button>
+              <button className="w-full rounded-2xl bg-teal-700 px-4 py-2.5 text-sm font-extrabold text-white shadow-sm transition active:translate-y-px active:scale-[0.99] hover:bg-teal-600">
+                เพิ่ม
+              </button>
             </form>
-          </Sheet>
+          </DiaryQuickAddSheet>
         ) : mode === 'food_catalog' ? (
-          <Sheet title="เลือกจากรายการอาหาร">
+          <DiaryQuickAddSheet title="เลือกจากรายการอาหาร" onClose={close}>
             <div className="space-y-3">
               <div className="text-xs text-gray-600">เลือก 1 รายการเพื่อเพิ่มลงไดอารี่</div>
               <ul className="max-h-[50vh] space-y-2 overflow-auto">
@@ -448,16 +524,18 @@ export const DiaryQuickAdd = (props: {
                         <input type="hidden" name="protein" value={String(f.protein)} />
                         <input type="hidden" name="fat" value={String(f.fat)} />
                         <input type="hidden" name="carbs" value={String(f.carbs)} />
-                        <button className="rounded-xl bg-gray-900 px-3 py-2 text-sm font-semibold text-white">เพิ่ม</button>
+                        <button className="rounded-2xl bg-teal-700 px-3 py-2 text-sm font-extrabold text-white shadow-sm transition active:translate-y-px active:scale-[0.99] hover:bg-teal-600">
+                          เพิ่ม
+                        </button>
                       </form>
                     </div>
                   </li>
                 ))}
               </ul>
             </div>
-          </Sheet>
+          </DiaryQuickAddSheet>
         ) : mode === 'exercise_ai' ? (
-          <Sheet title="เพิ่มกิจกรรม AI">
+          <DiaryQuickAddSheet title="เพิ่มกิจกรรม AI" onClose={close}>
             {props.geminiEnabled ? (
               <form action="/api/diary/exercise/ai-estimate" method="post" className="space-y-3">
                 <input type="hidden" name="date" value={props.date} />
@@ -468,7 +546,7 @@ export const DiaryQuickAdd = (props: {
                     exerciseNameRef.current = e.target.value;
                   }}
                   placeholder="กิจกรรม เช่น วิ่ง, คาดิโอ, เดินเร็ว"
-                  className="w-full rounded-xl border px-3 py-2 text-sm"
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-600/20"
                   required
                 />
                 <input
@@ -479,10 +557,10 @@ export const DiaryQuickAdd = (props: {
                   }}
                   inputMode="numeric"
                   placeholder="นาที เช่น 30"
-                  className="w-full rounded-xl border px-3 py-2 text-sm"
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 shadow-sm outline-none placeholder:text-gray-400 focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-600/20"
                   required
                 />
-                <button className="w-full rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white">
+                <button className="w-full rounded-2xl bg-teal-700 px-4 py-2.5 text-sm font-extrabold text-white shadow-sm transition active:translate-y-px active:scale-[0.99] hover:bg-teal-600">
                   ประเมินและเพิ่ม
                 </button>
                 <div className="text-xs text-gray-600">ระบบจะประเมิน kcal ที่เผาผลาญและเพิ่มลงไดอารี่</div>
@@ -493,9 +571,9 @@ export const DiaryQuickAdd = (props: {
                 <div className="text-sm text-gray-600">กรุณาตั้งค่า `GEMINI_API_KEY` ในไฟล์ `.env.local`</div>
               </div>
             )}
-          </Sheet>
+          </DiaryQuickAddSheet>
         ) : mode === 'ai_food' ? (
-          <Sheet title="ค้นหาอาหาร">
+          <DiaryQuickAddSheet title="ค้นหาอาหาร" onClose={close}>
             {props.geminiEnabled ? (
               <div className="space-y-3">
                 <textarea
@@ -509,11 +587,14 @@ export const DiaryQuickAdd = (props: {
                 />
                 <button
                   type="button"
-                  className="w-full rounded-xl bg-gray-900 px-4 py-2 text-base font-semibold text-white disabled:opacity-50"
+                  className="w-full rounded-2xl bg-teal-700 px-4 py-2.5 text-base font-extrabold text-white shadow-sm transition active:translate-y-px active:scale-[0.99] hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
                   onClick={submitTextEstimate}
                   disabled={estimating}
                 >
-                  {estimating ? 'กำลังประเมิน…' : 'ประเมิน'}
+                  <span className="inline-flex items-center justify-center gap-2">
+                    {estimating ? <Spinner className="text-white" /> : null}
+                    <span>{estimating ? 'กำลังประเมิน…' : 'ประเมิน'}</span>
+                  </span>
                 </button>
                 <div className="text-xs text-gray-600">AI จะประเมินจากข้อความและแสดงผลก่อนบันทึก</div>
 
@@ -551,7 +632,7 @@ export const DiaryQuickAdd = (props: {
                       <input type="hidden" name="protein" value={String(validEstimated.protein)} />
                       <input type="hidden" name="fat" value={String(validEstimated.fat)} />
                       <input type="hidden" name="carbs" value={String(validEstimated.carbs)} />
-                      <button className="w-full rounded-xl bg-emerald-600 px-4 py-2 text-base font-semibold text-white">
+                      <button className="w-full rounded-2xl bg-teal-700 px-4 py-2.5 text-base font-extrabold text-white shadow-sm transition active:translate-y-px active:scale-[0.99] hover:bg-teal-600">
                         บันทึกลงไดอารี่
                       </button>
                     </form>
@@ -564,9 +645,9 @@ export const DiaryQuickAdd = (props: {
                 <div className="text-sm text-gray-600">กรุณาตั้งค่า `GEMINI_API_KEY` ในไฟล์ `.env.local`</div>
               </div>
             )}
-          </Sheet>
+          </DiaryQuickAddSheet>
         ) : mode === 'ai_photo' ? (
-          <Sheet title="AI ถ่ายรูปอาหาร">
+          <DiaryQuickAddSheet title="AI ถ่ายรูปอาหาร" onClose={close}>
             {props.geminiEnabled ? (
               <div className="space-y-3">
                 <input
@@ -592,7 +673,7 @@ export const DiaryQuickAdd = (props: {
 
                 <button
                   type="button"
-                  className="w-full rounded-xl border bg-white px-4 py-2 text-sm font-semibold"
+                  className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-extrabold text-gray-900 shadow-sm transition active:translate-y-px active:scale-[0.99] hover:bg-gray-50"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   ถ่ายรูป/เลือกรูปใหม่
@@ -635,11 +716,14 @@ export const DiaryQuickAdd = (props: {
 
                     <button
                       type="button"
-                      className="mt-3 w-full rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                      className="mt-3 w-full rounded-2xl bg-teal-700 px-4 py-2.5 text-sm font-extrabold text-white shadow-sm transition active:translate-y-px active:scale-[0.99] hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
                       onClick={submitPhotoEstimate}
                       disabled={!photo || estimating}
                     >
-                      {estimating ? 'กำลังประเมิน…' : 'ประเมิน'}
+                      <span className="inline-flex items-center justify-center gap-2">
+                        {estimating ? <Spinner className="text-white" /> : null}
+                        <span>{estimating ? 'กำลังประเมิน…' : 'ประเมิน'}</span>
+                      </span>
                     </button>
                   </div>
                 ) : (
@@ -688,7 +772,7 @@ export const DiaryQuickAdd = (props: {
                       <input type="hidden" name="protein" value={String(validEstimated.protein)} />
                       <input type="hidden" name="fat" value={String(validEstimated.fat)} />
                       <input type="hidden" name="carbs" value={String(validEstimated.carbs)} />
-                      <button className="w-full rounded-xl bg-emerald-600 px-4 py-2 text-base font-semibold text-white">
+                      <button className="w-full rounded-2xl bg-teal-700 px-4 py-2.5 text-base font-extrabold text-white shadow-sm transition active:translate-y-px active:scale-[0.99] hover:bg-teal-600">
                         บันทึกลงไดอารี่
                       </button>
                     </form>
@@ -699,7 +783,7 @@ export const DiaryQuickAdd = (props: {
             ) : (
               <div className="text-sm text-gray-700">ยังไม่ได้ตั้งค่า GEMINI_API_KEY</div>
             )}
-          </Sheet>
+          </DiaryQuickAddSheet>
         ) : null
       ) : null}
     </>

@@ -7,8 +7,8 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
 
 export const LoginClient = () => {
   const searchParams = useSearchParams();
-  const next = searchParams.get('next') ?? '/dashboard';
-  const err = searchParams.get('err');
+  const next = searchParams?.get('next') ?? '/dashboard';
+  const err = searchParams?.get('err');
 
   const signIn = async () => {
     const sb = createSupabaseBrowserClient();

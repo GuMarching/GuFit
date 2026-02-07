@@ -4,8 +4,15 @@
 
 :root {
   color-scheme: light;
+  --gufit-primary: 15 118 110;
+  --gufit-bg: 246 247 249;
+  --gufit-surface: 255 255 255;
+  --gufit-text: 17 24 39;
 }
 
 body {
-  @apply bg-gray-50 text-gray-900 antialiased;
+  @apply antialiased;
+  background-color: rgb(var(--gufit-bg));
+  color: rgb(var(--gufit-text));
+  text-rendering: optimizeLegibility;
 }

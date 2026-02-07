@@ -26,20 +26,21 @@ const isoToDate = (iso: string): Date => {
 
 const TH_WEEKDAYS_SHORT = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'] as const;
 
-export const DiaryDateNav = (props: { date: string }) => {
+export const DiaryDateNav = (props: { date: string; basePath?: string }) => {
   const router = useRouter();
-
-  const dateInputRef = useRef<HTMLInputElement | null>(null);
+  const basePath = props.basePath ?? '/diary';
 
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const [daysBack, setDaysBack] = useState(21);
 
   const todayIso = useMemo(() => {
-    const d = new Date();
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
+    const fmt = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Bangkok',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    return fmt.format(new Date());
   }, []);
 
   useEffect(() => {
@@ -63,6 +64,13 @@ export const DiaryDateNav = (props: { date: string }) => {
     el.scrollLeft = el.scrollWidth;
   }, [daysBack]);
 
+  useEffect(() => {
+    const prev = addDays(props.date, -1);
+    const next = addDays(props.date, 1);
+    router.prefetch(`${basePath}?date=${prev}`);
+    router.prefetch(`${basePath}?date=${next}`);
+  }, [router, basePath, props.date]);
+
   const loadMoreLeft = () => {
     const el = scrollerRef.current;
     if (!el) {
@@ -82,25 +90,6 @@ export const DiaryDateNav = (props: { date: string }) => {
 
   return (
     <div className="flex items-center gap-2">
-      <button
-        type="button"
-        onClick={() => dateInputRef.current?.showPicker?.() ?? dateInputRef.current?.click()}
-        className="shrink-0 rounded-2xl border bg-white px-3 py-2 text-sm font-semibold shadow-sm"
-        aria-label="เลือกวันที่"
-      >
-        📅
-      </button>
-
-      <input
-        ref={dateInputRef}
-        type="date"
-        value={props.date}
-        onChange={(e) => router.push(`/diary?date=${e.target.value}`)}
-        className="sr-only"
-        aria-hidden="true"
-        tabIndex={-1}
-      />
-
       <div
         ref={scrollerRef}
         className="flex flex-1 gap-2 overflow-x-auto pb-2"
@@ -119,28 +108,30 @@ export const DiaryDateNav = (props: { date: string }) => {
             <button
               key={iso}
               type="button"
-              onClick={() => router.push(`/diary?date=${iso}`)}
+              onClick={() => router.push(`${basePath}?date=${iso}`)}
+              onMouseEnter={() => router.prefetch(`${basePath}?date=${iso}`)}
+              onTouchStart={() => router.prefetch(`${basePath}?date=${iso}`)}
               className={
                 selected
-                  ? 'min-w-[58px] rounded-full border-2 border-emerald-600 bg-emerald-50 px-3 py-2 text-center shadow-sm'
+                  ? 'min-w-[56px] rounded-full border-2 border-teal-700 bg-teal-50 px-3 py-2 text-center shadow-sm transition active:translate-y-px active:scale-[0.99]'
                   : isToday
-                    ? 'min-w-[58px] rounded-full border-2 border-emerald-200 bg-white px-3 py-2 text-center shadow-sm'
-                    : 'min-w-[58px] rounded-full border bg-white px-3 py-2 text-center shadow-sm'
+                    ? 'min-w-[56px] rounded-full border-2 border-teal-200 bg-white px-3 py-2 text-center shadow-sm transition active:translate-y-px active:scale-[0.99]'
+                    : 'min-w-[56px] rounded-full border border-gray-200 bg-white px-3 py-2 text-center shadow-sm transition hover:bg-gray-50 active:translate-y-px active:scale-[0.99]'
               }
             >
               <div className="relative">
-                <div className={selected ? 'text-[11px] font-semibold text-emerald-700' : 'text-[11px] font-semibold text-gray-700'}>
+                <div className={selected ? 'text-[11px] font-semibold text-teal-800' : 'text-[11px] font-semibold text-gray-700'}>
                   {wd}
                 </div>
-                <div className={selected ? 'text-sm font-extrabold text-emerald-700' : 'text-sm font-bold text-gray-900'}>
+                <div className={selected ? 'text-sm font-extrabold text-teal-900' : 'text-sm font-extrabold text-gray-900'}>
                   {dd}
                 </div>
                 {isToday ? (
                   <span
                     className={
                       selected
-                        ? 'absolute -right-1 -top-1 h-2 w-2 rounded-full bg-emerald-600'
-                        : 'absolute -right-1 -top-1 h-2 w-2 rounded-full bg-emerald-400'
+                        ? 'absolute -right-1 -top-1 h-2 w-2 rounded-full bg-teal-700'
+                        : 'absolute -right-1 -top-1 h-2 w-2 rounded-full bg-teal-400'
                     }
                     aria-label="วันนี้"
                   />

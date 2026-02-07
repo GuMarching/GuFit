@@ -1,13 +1,15 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 
-import { Card, Field, Input, Select, Button, DangerButton } from '@/components/ui';
+import { Card, Field, Input, Select, DangerButton } from '@/components/ui';
+import SubmitButton from '@/components/SubmitButton';
 import { getUserProfile, saveUserProfile } from '@/lib/services/userService';
 import type { ActivityLevel, Gender, GoalType, IsoDateString } from '@/types/domain';
 import { resetLocalDb, todayIsoDate } from '@/db/local/store';
 import { getUserIdOrRedirect } from '@/lib/supabase/auth';
 import { isSupabaseEnabled } from '@/lib/supabase/client';
 import { createSupabaseServerClientReadonly } from '@/lib/supabase/server';
+import ProfileDobAgeFields from '@/components/profile/ProfileDobAgeFields';
 
 export default async function ProfilePage() {
   const userId = await getUserIdOrRedirect();
@@ -75,10 +77,17 @@ export default async function ProfilePage() {
         getAll: () => cookieStore.getAll().map((c) => ({ name: c.name, value: c.value })),
       });
 
-      await sb.from('food_logs').delete().eq('user_id', userId);
-      await sb.from('exercise_logs').delete().eq('user_id', userId);
-      await sb.from('weight_logs').delete().eq('user_id', userId);
-      await sb.from('profiles').delete().eq('id', userId);
+      const foodRes = await sb.from('food_logs').delete().eq('user_id', userId);
+      if (foodRes.error) throw new Error(foodRes.error.message);
+
+      const exerciseRes = await sb.from('exercise_logs').delete().eq('user_id', userId);
+      if (exerciseRes.error) throw new Error(exerciseRes.error.message);
+
+      const weightRes = await sb.from('weight_logs').delete().eq('user_id', userId);
+      if (weightRes.error) throw new Error(weightRes.error.message);
+
+      const profileRes = await sb.from('profiles').delete().eq('id', userId);
+      if (profileRes.error) throw new Error(profileRes.error.message);
     } else {
       await resetLocalDb();
     }
@@ -98,25 +107,10 @@ export default async function ProfilePage() {
             </Select>
           </Field>
 
-          <Field label="วันเกิด">
-            <Input
-              name="dateOfBirth"
-              type="date"
-              defaultValue={profile?.dateOfBirth ?? '1990-01-01'}
-              required
-            />
-          </Field>
-
-          <Field label="อายุ (คำนวณอัตโนมัติ)">
-            <Input
-              name="age"
-              type="number"
-              min={10}
-              max={100}
-              defaultValue={profile?.age ?? 25}
-              required
-            />
-          </Field>
+          <ProfileDobAgeFields
+            defaultDob={profile?.dateOfBirth ?? '1990-01-01'}
+            defaultAge={profile?.age ?? 25}
+          />
 
           <Field label="ส่วนสูง (ซม.)">
             <Input
@@ -176,7 +170,7 @@ export default async function ProfilePage() {
           </Field>
 
           <div className="md:col-span-2">
-            <Button type="submit">บันทึก</Button>
+            <SubmitButton loadingText="กำลังบันทึก…">บันทึก</SubmitButton>
           </div>
         </form>
       </Card>
