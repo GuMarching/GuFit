@@ -26,16 +26,6 @@ const addDays = (iso: string, days: number): string => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
-const isoToDate = (iso: string): Date => {
-  const parts = iso.split('-');
-  const y = Number(parts[0] ?? '0');
-  const m = Number(parts[1] ?? '1');
-  const d = Number(parts[2] ?? '1');
-  return new Date(y, m - 1, d);
-};
-
-const TH_WEEKDAYS_SHORT = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'] as const;
-
 export default async function WeightPage(props: { searchParams?: { date?: string; range?: string } }) {
   const userId = await getUserIdOrRedirect();
   const profile = await getUserProfile(userId);

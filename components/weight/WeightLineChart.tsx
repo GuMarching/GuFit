@@ -10,8 +10,6 @@ const isoToDate = (iso: string): Date => {
 
 const TH_WEEKDAYS_SHORT = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'] as const;
 
-const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
-
 export default function WeightLineChart(props: {
   points: { date: string; weightKg: number }[];
   heightPx?: number;
@@ -29,7 +27,6 @@ export default function WeightLineChart(props: {
   const values = points.map((p) => p.weightKg);
   const minV = Math.min(...values);
   const maxV = Math.max(...values);
-  const range = Math.max(0.5, maxV - minV);
 
   const chartMin = Math.floor((minV - 0.2) * 2) / 2;
   const chartMax = Math.ceil((maxV + 0.2) * 2) / 2;
