@@ -4,11 +4,20 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/:path*\\.(mp4|webm|svg|png|jpg|jpeg|gif|ico|webmanifest)',
+        source: '/:path*\\.(mp4|webm|svg|png|jpg|jpeg|gif|ico)',
         headers: [
           {
             key: 'Cache-Control',
             value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/:path*\\.(webmanifest)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, must-revalidate',
           },
         ],
       },
