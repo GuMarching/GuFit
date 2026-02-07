@@ -32,6 +32,7 @@ export default function WeightLineChart(props: {
   const h = props.heightPx ?? 170;
   const w = 360;
   const [hoverI, setHoverI] = useState<number | null>(null);
+  const [interacting, setInteracting] = useState(false);
 
   const points = props.points.filter((p) => Number.isFinite(p.weightKg));
 
@@ -89,8 +90,25 @@ export default function WeightLineChart(props: {
         height={h}
         aria-hidden
         className="touch-none"
-        onPointerLeave={() => setHoverI(null)}
+        onPointerDown={(e) => {
+          if (e.pointerType !== 'mouse') setInteracting(true);
+        }}
+        onPointerUp={() => {
+          setInteracting(false);
+          setHoverI(null);
+        }}
+        onPointerCancel={() => {
+          setInteracting(false);
+          setHoverI(null);
+        }}
+        onPointerLeave={() => {
+          setInteracting(false);
+          setHoverI(null);
+        }}
         onPointerMove={(e) => {
+          const shouldTrack = e.pointerType === 'mouse' || interacting;
+          if (!shouldTrack) return;
+
           const el = e.currentTarget;
           const rect = el.getBoundingClientRect();
           const x = ((e.clientX - rect.left) / rect.width) * w;
@@ -130,10 +148,27 @@ export default function WeightLineChart(props: {
         <path d={d} fill="none" stroke="#0f766e" strokeWidth={4.5} strokeLinecap="round" strokeLinejoin="round" opacity={0.18} />
         <path d={d} fill="none" stroke="#0f766e" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
 
-        <line x1={activeX} x2={activeX} y1={pad.top} y2={pad.top + innerH} stroke="#111827" strokeWidth={1} opacity={0.12} />
+        {hoverI == null ? null : (
+          <line x1={activeX} x2={activeX} y1={pad.top} y2={pad.top + innerH} stroke="#111827" strokeWidth={1} opacity={0.12} />
+        )}
 
-        <circle cx={activeX} cy={activeY} r={8} fill="#ffffff" opacity={0.95} />
-        <circle cx={activeX} cy={activeY} r={5} fill="#0f766e" />
+        {points.map((p, i) => {
+          const x = toX(i);
+          const y = toY(p.weightKg);
+          const isActive = i === activeI && hoverI != null;
+          return (
+            <g key={`${p.date}-dot`}>
+              <circle cx={x} cy={y} r={3.25} fill="#ffffff" opacity={0.95} />
+              <circle cx={x} cy={y} r={2.25} fill="#0f766e" opacity={0.9} />
+              {isActive ? (
+                <>
+                  <circle cx={x} cy={y} r={8} fill="#ffffff" opacity={0.95} />
+                  <circle cx={x} cy={y} r={5} fill="#0f766e" />
+                </>
+              ) : null}
+            </g>
+          );
+        })}
 
         {points.map((p, i) => {
           if (i % labelEvery !== 0 && i !== points.length - 1) return null;
@@ -154,17 +189,19 @@ export default function WeightLineChart(props: {
         })}
       </svg>
 
-      <div
-        className="pointer-events-none absolute z-10 rounded-2xl border border-gray-100 bg-white/95 px-2.5 py-2 text-xs font-semibold text-gray-900 shadow-sm"
-        style={{
-          left: `min(calc(100% - 8px), max(8px, ${(activeX / w) * 100}%))`,
-          top: 10,
-          transform: 'translateX(-50%)',
-        }}
-      >
-        <div className="text-[11px] font-extrabold">{fmt1(active.weightKg)} กก.</div>
-        <div className="text-[11px] font-semibold text-gray-600">{active.date}</div>
-      </div>
+      {hoverI == null ? null : (
+        <div
+          className="pointer-events-none absolute z-10 rounded-2xl border border-gray-100 bg-white/95 px-2.5 py-2 text-xs font-semibold text-gray-900 shadow-sm"
+          style={{
+            left: `min(calc(100% - 8px), max(8px, ${(activeX / w) * 100}%))`,
+            top: 10,
+            transform: 'translateX(-50%)',
+          }}
+        >
+          <div className="text-[11px] font-extrabold">{fmt1(active.weightKg)} กก.</div>
+          <div className="text-[11px] font-semibold text-gray-600">{active.date}</div>
+        </div>
+      )}
 
       <div className="mt-2 flex items-baseline justify-between">
         <div className="text-[11px] font-semibold text-gray-600">ช่วง</div>
