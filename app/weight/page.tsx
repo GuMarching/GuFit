@@ -5,7 +5,7 @@ import SubmitButton from '@/components/SubmitButton';
 import { getUserProfile } from '@/lib/services/userService';
 import { listWeightLogs, upsertWeightForDate } from '@/lib/services/weightService';
 import { todayIsoDate } from '@/db/local/store';
-import { Sparkline } from '@/components/sparkline';
+import WeightLineChart from '@/components/weight/WeightLineChart';
 import { getUserIdOrRedirect } from '@/lib/supabase/auth';
 import { DiaryDateNav } from '@/components/diary/DiaryDateNav';
 import { fmt1 } from '@/lib/format';
@@ -61,12 +61,6 @@ export default async function WeightPage(props: { searchParams?: { date?: string
   const selectedExisting = ascending.find((l) => l.date === date)?.weightKg ?? null;
   const min = values.length > 0 ? Math.min(...values) : null;
   const max = values.length > 0 ? Math.max(...values) : null;
-
-  const chartMin = min != null ? Math.floor((min - 0.1) * 2) / 2 : null;
-  const chartMax = max != null ? Math.ceil((max + 0.1) * 2) / 2 : null;
-  const ticks = chartMin != null && chartMax != null
-    ? [1, 0.75, 0.5, 0.25, 0].map((p) => ({ p, v: chartMin + (chartMax - chartMin) * p }))
-    : [];
 
   const upsert = async (formData: FormData) => {
     'use server';
@@ -151,30 +145,10 @@ export default async function WeightPage(props: { searchParams?: { date?: string
               </a>
             </div>
 
-            <div className="relative rounded-2xl bg-gray-50 p-3">
-              <div className="pointer-events-none absolute left-3 right-3 top-3 z-0" style={{ height: 92 }} aria-hidden="true">
-                {ticks.map((t) => (
-                  <div key={t.p} className="absolute left-0 right-0" style={{ top: `${(1 - t.p) * 92}px` }}>
-                    <div className="absolute -right-0 top-0 -translate-y-1/2 text-[11px] font-semibold text-gray-500">{fmt1(t.v)}</div>
-                    {t.p === 0 || t.p === 1 ? null : <div className="h-px w-full bg-gray-200" />}
-                  </div>
-                ))}
-              </div>
-              <Sparkline values={values} className="relative z-10 w-full" style={{ width: '100%', height: 92 }} showArea showLastDot />
-              <div className="mt-2 flex items-end justify-between gap-2 overflow-x-auto pb-1">
-                {rangeAscending.map((l) => {
-                  const dt = isoToDate(l.date);
-                  const wd = TH_WEEKDAYS_SHORT[dt.getDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6];
-                  const day = String(dt.getDate());
-                  return (
-                    <div key={l.date} className="min-w-[26px] text-center">
-                      <div className="text-[11px] font-semibold text-gray-700">{wd}</div>
-                      <div className="text-[11px] font-semibold text-gray-500">{day}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <WeightLineChart
+              points={rangeAscending.map((l) => ({ date: l.date, weightKg: l.weightKg }))}
+              heightPx={180}
+            />
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-3xl border border-gray-100 bg-gray-50/80 p-3 shadow-sm">
                 <div className="text-[11px] font-semibold text-gray-600">ล่าสุด</div>

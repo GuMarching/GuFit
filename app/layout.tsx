@@ -45,7 +45,7 @@ export default function RootLayout(props: { children: ReactNode }) {
                 <Image src="/web-app-manifest-192x192.png" alt="GuFit" width={26} height={26} className="h-[26px] w-[26px]" priority />
                 <span>GuFit</span>
               </Link>
-              <Suspense fallback={<div className="h-9 w-9" />}>
+              <Suspense fallback={null}>
                 <div className="flex items-center gap-2">
                   <DashboardHeaderWeightLossDays />
                   <HeaderRight />

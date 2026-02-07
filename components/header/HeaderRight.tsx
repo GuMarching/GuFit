@@ -43,7 +43,7 @@ export const HeaderRight = () => {
     return d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : bangkokTodayIso();
   }, [searchParams]);
 
-  if (!isDiary && !isWeight) return <div className="h-9 w-9" />;
+  if (!isDiary && !isWeight) return null;
 
   return (
     <div className="flex items-center gap-2">

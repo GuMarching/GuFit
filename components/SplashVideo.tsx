@@ -38,23 +38,22 @@ export default function SplashVideo(props: {
 
   return (
     <div className="fixed inset-0 z-[100] grid place-items-center bg-black">
-      <div className="w-1/2 max-w-[320px]">
-        <video
-          ref={videoRef}
-          src={src}
-          className="aspect-video w-full rounded-2xl object-contain"
-          autoPlay
-          muted
-          playsInline
-          preload="metadata"
-          disablePictureInPicture
-          onError={() => {
-            setBlocked(true);
-            setOpen(false);
-          }}
-          onEnded={() => setOpen(false)}
-        />
-      </div>
+      <video
+        ref={videoRef}
+        src={src}
+        className="w-full object-contain"
+        style={{ maxHeight: '62dvh' }}
+        autoPlay
+        muted
+        playsInline
+        preload="metadata"
+        disablePictureInPicture
+        onError={() => {
+          setBlocked(true);
+          setOpen(false);
+        }}
+        onEnded={() => setOpen(false)}
+      />
     </div>
   );
 }
