@@ -76,7 +76,10 @@ export default async function DashboardPage(props: { searchParams?: { range?: st
 
   const from = (rangeDates ? rangeDates[0] : '2000-01-01') as IsoDateString;
   const to = (rangeDates ? rangeDates[rangeDates.length - 1] : date) as IsoDateString;
-  const rangeLogs = await listFoodLogsByRange({ userId: profile.id, from, to });
+  const [rangeLogs, weightLogs] = await Promise.all([
+    listFoodLogsByRange({ userId: profile.id, from, to }),
+    listWeightLogs({ userId: profile.id }),
+  ]);
 
   for (const l of rangeLogs) {
     const prev =
@@ -124,7 +127,6 @@ export default async function DashboardPage(props: { searchParams?: { range?: st
   const maxMacroKcal = Math.max(1, ...foodByDay.map((d) => d.macroKcal), target);
   const avgCalories = foodByDay.length > 0 ? foodByDay.reduce((s, x) => s + x.calories, 0) / foodByDay.length : 0;
 
-  const weightLogs = await listWeightLogs({ userId: profile.id });
   const weightAscending = [...weightLogs].sort((a, b) => (a.date > b.date ? 1 : -1));
   const latestWeight = weightAscending.length > 0 ? weightAscending[weightAscending.length - 1]!.weightKg : profile.weightKg;
 

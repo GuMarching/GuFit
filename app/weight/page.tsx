@@ -138,6 +138,7 @@ export default async function WeightPage(props: { searchParams?: { date?: string
             <WeightLineChart
               points={rangeAscending.map((l) => ({ date: l.date, weightKg: l.weightKg }))}
               heightPx={180}
+              targetWeightKg={profile.goalWeightKg ?? null}
             />
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-3xl border border-gray-100 bg-gray-50/80 p-3 shadow-sm">

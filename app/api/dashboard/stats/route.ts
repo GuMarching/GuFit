@@ -1,28 +1,28 @@
 import { NextResponse } from 'next/server';
 
 import { getUserIdOrRedirect } from '@/lib/supabase/auth';
-import { listWeightLogs } from '@/lib/services/weightService';
+import { getUserProfile } from '@/lib/services/userService';
+import { todayIsoDate } from '@/db/local/store';
+
+const isoToUtcMidnightMs = (iso: string): number => {
+  const parts = iso.split('-');
+  const y = Number(parts[0] ?? '0');
+  const m = Number(parts[1] ?? '1');
+  const d = Number(parts[2] ?? '1');
+  return Date.UTC(y, m - 1, d);
+};
 
 export async function GET() {
   const userId = await getUserIdOrRedirect();
-  const logs = await listWeightLogs({ userId });
-  const ascending = [...logs].sort((a, b) => (a.date > b.date ? 1 : -1));
+  const profile = await getUserProfile(userId);
 
   const weightLossDays = (() => {
-    if (ascending.length < 2) return 0;
-    const desc = [...ascending].sort((a, b) => (a.date > b.date ? -1 : 1));
-    let days = 0;
-    for (let i = 0; i < desc.length - 1; i++) {
-      const newer = desc[i];
-      const older = desc[i + 1];
-      if (!newer || !older) break;
-      if (newer.weightKg < older.weightKg) {
-        days += 1;
-      } else {
-        break;
-      }
-    }
-    return days;
+    const start = profile?.startDate;
+    if (!start) return 0;
+    const today = todayIsoDate();
+    const diffMs = isoToUtcMidnightMs(today) - isoToUtcMidnightMs(start);
+    const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+    return Number.isFinite(diffDays) ? Math.max(0, diffDays) : 0;
   })();
 
   return NextResponse.json({ weightLossDays });

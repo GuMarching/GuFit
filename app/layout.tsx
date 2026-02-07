@@ -11,6 +11,7 @@ import DashboardHeaderWeightLossDays from '@/components/header/DashboardHeaderWe
 import RoutePrefetcher from '@/components/RoutePrefetcher';
 import SplashVideo from '@/components/SplashVideo';
 import ToastFromSearchParams from '@/components/ToastFromSearchParams';
+import UpdateAvailableBanner from '@/components/UpdateAvailableBanner';
 
 export const metadata: Metadata = {
   title: 'GuFit - แอพนับแคลอรี่',
@@ -53,6 +54,10 @@ export default function RootLayout(props: { children: ReactNode }) {
               </Suspense>
             </div>
           </header>
+
+          <Suspense fallback={null}>
+            <UpdateAvailableBanner />
+          </Suspense>
 
           <Suspense fallback={null}>
             <ToastFromSearchParams />
